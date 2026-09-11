@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { DashboardIcon, ProjectsIcon, TeamIcon, LogoIcon, ClientsIcon, CollaboratorsIcon, CalendarIcon, DownloadIcon, UploadIcon, BriefcaseIcon, TrendingUpIcon } from './ui/Icons';
+import { DashboardIcon, ProjectsIcon, TeamIcon, LogoIcon, ClientsIcon, CollaboratorsIcon, CalendarIcon, DownloadIcon, UploadIcon, BriefcaseIcon, TrendingUpIcon, SettingsIcon } from './ui/Icons';
 import type { View } from '../types';
 
 interface SidebarProps {
@@ -109,6 +109,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
           isActive={currentView === 'economic-tracking'}
           onClick={() => setCurrentView('economic-tracking')}
         />
+        {isGerencia && (
+          <NavItem
+            icon={<SettingsIcon className={iconClass} />}
+            label="Administración"
+            isActive={currentView === 'administration'}
+            onClick={() => setCurrentView('administration')}
+          />
+        )}
       </nav>
 
       {/* Backup Controls */}

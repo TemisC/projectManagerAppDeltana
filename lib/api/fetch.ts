@@ -348,8 +348,12 @@ export async function fetchProjectManagers(): Promise<Record<string, { id: strin
 
 export async function fetchCurrentProfile(
   userId: string
-): Promise<{ role: string; name: string | null; email: string } | null> {
-  const { data, error } = await supabase.from('profiles').select('role, name, email').eq('id', userId).maybeSingle();
+): Promise<{ role: string; name: string | null; email: string; active: boolean } | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role, name, email, active')
+    .eq('id', userId)
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

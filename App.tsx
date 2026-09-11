@@ -11,6 +11,7 @@ import InternalTeam from './components/InternalTeam'; // New Import
 import Planning from './components/Planning';
 import EconomicTracking from './components/EconomicTracking';
 import ExecutiveDashboard from './components/ExecutiveDashboard';
+import Administration from './components/Administration';
 import Login from './components/Login';
 import type { View, Project, CollaboratorInfo, TeamMember, ClientInfo, InternalCostInfo } from './types';
 import { MemberType } from './types';
@@ -107,6 +108,11 @@ const App: React.FC = () => {
       fetchCurrentProfile(session.user.id),
     ])
       .then(([loadedProjects, loadedLoneCollaborators, loadedRates, profile]) => {
+        if (profile && profile.active === false) {
+          alert('Tu cuenta está desactivada. Contactá a Gerencia.');
+          supabase.auth.signOut();
+          return;
+        }
         setProjects(loadedProjects);
         setLoneCollaborators(loadedLoneCollaborators);
         setInternalRates(loadedRates);
@@ -493,6 +499,11 @@ const App: React.FC = () => {
             projectManagers={projectManagers}
           />
         );
+      case 'administration':
+        if (currentUserRole !== 'gerencia') {
+          return <Dashboard projects={projects} internalRates={internalRates} />;
+        }
+        return <Administration />;
       default:
         return <Dashboard projects={projects} internalRates={internalRates} />;
     }
