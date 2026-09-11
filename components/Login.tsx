@@ -27,7 +27,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-gray-800 mb-4 border border-gray-700 shadow-xl shadow-sky-900/20">
                 <LogoIcon className="h-10 w-10 text-sky-400" />
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Vicent PM</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Deltana PM</h1>
             <p className="text-gray-500 mt-2 text-sm">Acceso restringido al sistema de gestión</p>
         </div>
 
@@ -64,7 +64,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </Card>
         
         <p className="text-center text-gray-600 text-xs mt-8">
-            &copy; {new Date().getFullYear()} Vicent PM System. Solo personal autorizado.
+            &copy; {new Date().getFullYear()} Deltana PM System. Solo personal autorizado.
         </p>
       </div>
     </div>

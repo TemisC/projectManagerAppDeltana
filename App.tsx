@@ -197,7 +197,7 @@ const App: React.FC = () => {
               alert("Datos cargados correctamente. ¡Bienvenido de nuevo!");
           } catch (err) {
               console.error("Error parsing backup file", err);
-              alert("Error al leer el archivo. Asegúrate de que es un backup válido de Vicent PM (.json).");
+              alert("Error al leer el archivo. Asegúrate de que es un backup válido de Deltana PM (.json).");
           }
       };
       reader.readAsText(file);

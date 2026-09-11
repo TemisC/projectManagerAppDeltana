@@ -49,7 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
     <aside className="fixed top-0 left-0 h-full w-16 md:w-64 bg-gray-800 text-white flex flex-col z-10 shadow-lg">
       <div className="flex items-center justify-center md:justify-start md:px-4 h-20 border-b border-gray-700">
         <LogoIcon className="h-8 w-8 text-sky-400" />
-        <span className="ml-3 text-xl font-bold hidden md:inline">Vicent PM</span>
+        <span className="ml-3 text-xl font-bold hidden md:inline">Deltana PM</span>
       </div>
       <nav className="flex-1 mt-6 overflow-y-auto">
         <NavItem
