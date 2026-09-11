@@ -1,6 +1,5 @@
 
-import React, { useState } from 'react';
-import { LogoIcon } from './ui/Icons';
+import React, { useMemo, useState } from 'react';
 
 interface LoginProps {
   onLogin: (email: string, password: string) => Promise<string | null>;
@@ -8,11 +7,16 @@ interface LoginProps {
 
 const montserrat: React.CSSProperties = { fontFamily: '"Montserrat", sans-serif' };
 
+const HERO_IMAGES = ['/images/login/hero-1.jpg', '/images/login/hero-2.jpg', '/images/login/hero-3.jpg', '/images/login/hero-4.jpg'];
+
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Pick once per mount so it doesn't shuffle on every re-render/keystroke.
+  const heroImage = useMemo(() => HERO_IMAGES[Math.floor(Math.random() * HERO_IMAGES.length)], []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,22 +35,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div
         className="hidden md:flex md:w-1/2 relative flex-col justify-end p-12 text-white"
         style={{
-          backgroundImage:
-            "linear-gradient(180deg, rgba(15,23,42,0.35), rgba(15,23,42,0.88)), url('/images/login/hero.jpg')",
+          backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.35), rgba(15,23,42,0.88)), url('${heroImage}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        <div className="flex items-center gap-3 mb-8">
-          <div className="h-12 w-12 rounded-lg bg-[#FBA628] flex items-center justify-center shadow-lg">
-            <LogoIcon className="h-7 w-7 text-white" />
-          </div>
-          <div>
-            <p className="text-2xl font-extrabold tracking-tight" style={montserrat}>
-              DELTANA <span className="text-[#FBA628]">PM</span>
-            </p>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-gray-300">Engineering</p>
-          </div>
+        <div className="mb-8 bg-white/95 rounded-lg px-4 py-3 inline-block w-fit shadow-lg">
+          <img src="/images/logo-deltana.png" alt="Deltana Engineering" className="h-9" />
         </div>
         <h2 className="text-3xl font-extrabold leading-tight max-w-md" style={montserrat}>
           Enfoque global y una metodología única para cada proyecto.
@@ -60,15 +55,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-4">
         <div className="w-full max-w-sm">
           <div className="mb-10 md:hidden text-center">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-lg bg-[#FBA628] mb-4 shadow-lg">
-              <LogoIcon className="h-8 w-8 text-white" />
-            </div>
-            <p className="text-2xl font-extrabold text-gray-900 tracking-tight" style={montserrat}>
-              DELTANA <span className="text-[#FBA628]">PM</span>
-            </p>
+            <img src="/images/logo-deltana.png" alt="Deltana Engineering" className="h-10 mx-auto mb-2" />
           </div>
 
-          <h1 className="hidden md:block text-2xl font-extrabold text-gray-900 mb-1" style={montserrat}>
+          <div className="hidden md:block mb-8">
+            <img src="/images/logo-deltana.png" alt="Deltana Engineering" className="h-8 mb-6" />
+          </div>
+
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-1" style={montserrat}>
             Acceso al sistema
           </h1>
           <p className="text-gray-500 text-sm mb-8">Ingresá con tu cuenta para continuar.</p>
