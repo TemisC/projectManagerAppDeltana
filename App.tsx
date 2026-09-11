@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Projects from './components/Projects';
@@ -10,83 +11,93 @@ import InternalTeam from './components/InternalTeam'; // New Import
 import Planning from './components/Planning';
 import EconomicTracking from './components/EconomicTracking';
 import Login from './components/Login';
-import { projects as initialProjects } from './data';
 import type { View, Project, CollaboratorInfo, TeamMember, ClientInfo, InternalCostInfo } from './types';
 import { MemberType } from './types';
 import ProjectModal from './components/ProjectModal';
 import AddCollaboratorModal from './components/AddCollaboratorModal';
 import ClientFinancialsModal from './components/ClientFinancialsModal';
+import { supabase } from './lib/supabaseClient';
+import { fetchProjects, fetchLoneCollaborators, fetchInternalRates } from './lib/api/fetch';
+import {
+  saveProject as apiSaveProject,
+  deleteProject as apiDeleteProject,
+  saveClientFinancials as apiSaveClientFinancials,
+  saveCollaboratorFinancials as apiSaveCollaboratorFinancials,
+  removeCollaboratorFromProject as apiRemoveCollaboratorFromProject,
+  saveInternalFinancials as apiSaveInternalFinancials,
+  updateProjectWithMembers as apiUpdateProjectWithMembers,
+} from './lib/api/projects';
+import {
+  saveNewCollaborator as apiSaveNewCollaborator,
+  updateMemberName as apiUpdateMemberName,
+  updateGlobalRate as apiUpdateGlobalRate,
+  updateInternalMemberType as apiUpdateInternalMemberType,
+  deleteGlobalMember as apiDeleteGlobalMember,
+} from './lib/api/teamMembers';
 
-// --- CONFIGURACIÓN DE SEGURIDAD ---
-const APP_PASSWORD = "vicent2025"; // <--- CAMBIA ESTO POR TU CONTRASEÑA DESEADA
-// ----------------------------------
+// Any background persistence failure gets logged + surfaced, but never
+// rolls back the optimistic local state (matches the app's original
+// "update state, then persist" feel; a stale write just means a refresh
+// is needed to see the server's version again).
+const handlePersistError = (err: unknown) => {
+  console.error('Error al guardar en Supabase:', err);
+  alert('No se pudo guardar el cambio en el servidor. Los cambios pueden no haberse sincronizado — recargá la página para verificar.');
+};
 
 const App: React.FC = () => {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-      return localStorage.getItem('vicent_pm_auth') === 'true';
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  
-  // Track last data update
+
+  // Track last local backup export/import (informational only, not synced)
   const [lastDataUpdate, setLastDataUpdate] = useState<string | null>(() => {
       return localStorage.getItem('vicent_pm_last_update');
   });
-  
-  // Initialize Projects from LocalStorage if available, otherwise use data.ts
-  const [projects, setProjects] = useState<Project[]>(() => {
-    try {
-        const savedProjects = localStorage.getItem('vicent_pm_projects');
-        return savedProjects ? JSON.parse(savedProjects) : initialProjects;
-    } catch (e) {
-        console.error("Error loading projects from localStorage", e);
-        return initialProjects;
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loneCollaborators, setLoneCollaborators] = useState<TeamMember[]>([]);
+  const [internalRates, setInternalRates] = useState<Record<string, number>>({});
+
+  // Track auth session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthChecked(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  // Load all data from Supabase once authenticated
+  useEffect(() => {
+    if (!session) {
+      setProjects([]);
+      setLoneCollaborators([]);
+      setInternalRates({});
+      return;
     }
-  });
+    setDataLoading(true);
+    Promise.all([fetchProjects(), fetchLoneCollaborators(), fetchInternalRates()])
+      .then(([loadedProjects, loadedLoneCollaborators, loadedRates]) => {
+        setProjects(loadedProjects);
+        setLoneCollaborators(loadedLoneCollaborators);
+        setInternalRates(loadedRates);
+      })
+      .catch((err) => {
+        console.error('Error cargando datos desde Supabase:', err);
+        alert('No se pudieron cargar los datos desde el servidor. Recargá la página para reintentar.');
+      })
+      .finally(() => setDataLoading(false));
+  }, [session]);
 
-  // Initialize Lone Collaborators from LocalStorage
-  const [loneCollaborators, setLoneCollaborators] = useState<TeamMember[]>(() => {
-      try {
-          const savedCollabs = localStorage.getItem('vicent_pm_collaborators');
-          return savedCollabs ? JSON.parse(savedCollabs) : [];
-      } catch (e) {
-          console.error("Error loading collaborators from localStorage", e);
-          return [];
-      }
-  });
-
-  // Initialize Internal Global Rates from LocalStorage
-  const [internalRates, setInternalRates] = useState<Record<string, number>>(() => {
-      try {
-          const savedRates = localStorage.getItem('vicent_pm_internal_rates');
-          return savedRates ? JSON.parse(savedRates) : {};
-      } catch (e) {
-          console.error("Error loading internal rates", e);
-          return {};
-      }
-  });
-
-  // Save to LocalStorage whenever projects change
-  useEffect(() => {
-      localStorage.setItem('vicent_pm_projects', JSON.stringify(projects));
-  }, [projects]);
-
-  // Save to LocalStorage whenever loneCollaborators change
-  useEffect(() => {
-      localStorage.setItem('vicent_pm_collaborators', JSON.stringify(loneCollaborators));
-  }, [loneCollaborators]);
-
-  // Save Internal Rates
-  useEffect(() => {
-      localStorage.setItem('vicent_pm_internal_rates', JSON.stringify(internalRates));
-  }, [internalRates]);
-
-  
   // Project Modal State
   const [isProjectModalOpen, setProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  
+
   // Collaborator Modal State
   const [isAddCollaboratorModalOpen, setAddCollaboratorModalOpen] = useState(false);
 
@@ -102,7 +113,7 @@ const App: React.FC = () => {
   // Aggregate all unique team members (internal and external) for dropdowns
   const availableTeamMembers = useMemo(() => {
     const membersMap = new Map<string, TeamMember>();
-    
+
     // Add from projects
     projects.forEach(p => {
         p.team.forEach(m => {
@@ -123,21 +134,19 @@ const App: React.FC = () => {
   }, [projects, loneCollaborators]);
 
 
-  const handleLogin = (password: string) => {
-      if (password === APP_PASSWORD) {
-          setIsAuthenticated(true);
-          localStorage.setItem('vicent_pm_auth', 'true');
-          return true;
+  const handleLogin = async (email: string, password: string): Promise<string | null> => {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+          return 'Email o contraseña incorrectos.';
       }
-      return false;
+      return null;
   };
 
   const handleLogout = () => {
-      setIsAuthenticated(false);
-      localStorage.removeItem('vicent_pm_auth');
-  }
+      supabase.auth.signOut();
+  };
 
-  // --- DATA BACKUP HANDLERS ---
+  // --- DATA BACKUP HANDLERS (local JSON snapshot; not synced to Supabase) ---
   const handleExportData = () => {
     const now = new Date();
     const data = {
@@ -146,8 +155,7 @@ const App: React.FC = () => {
         internalRates,
         exportDate: now.toISOString()
     };
-    
-    // Update local state to reflect export
+
     const dateStr = now.toLocaleString();
     setLastDataUpdate(dateStr);
     localStorage.setItem('vicent_pm_last_update', dateStr);
@@ -157,8 +165,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    // Format: vicent_pm_backup_YYYY-MM-DD.json
-    link.download = `vicent_pm_backup_${now.toISOString().slice(0, 10)}.json`;
+    link.download = `deltana_pm_backup_${now.toISOString().slice(0, 10)}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -170,21 +177,21 @@ const App: React.FC = () => {
           try {
               const text = e.target?.result as string;
               const data = JSON.parse(text);
-              
+
+              // NOTE: this only replaces the in-memory view for inspection —
+              // it does not write to Supabase. A refresh brings back the
+              // server's real data. Bulk-importing a backup into the
+              // relational schema is a separate, deliberately deferred task.
               if (Array.isArray(data.projects)) {
                   setProjects(data.projects);
-                  localStorage.setItem('vicent_pm_projects', JSON.stringify(data.projects));
               }
               if (Array.isArray(data.loneCollaborators)) {
                   setLoneCollaborators(data.loneCollaborators);
-                  localStorage.setItem('vicent_pm_collaborators', JSON.stringify(data.loneCollaborators));
               }
               if (data.internalRates) {
                   setInternalRates(data.internalRates);
-                  localStorage.setItem('vicent_pm_internal_rates', JSON.stringify(data.internalRates));
               }
 
-              // Set Last Update Date
               let dateStr = "";
               if (data.exportDate) {
                   dateStr = new Date(data.exportDate).toLocaleString();
@@ -194,7 +201,7 @@ const App: React.FC = () => {
               setLastDataUpdate(dateStr);
               localStorage.setItem('vicent_pm_last_update', dateStr);
 
-              alert("Datos cargados correctamente. ¡Bienvenido de nuevo!");
+              alert("Backup cargado solo para vista previa en esta sesión — todavía no se sincroniza con el servidor. Recargar la página vuelve a traer los datos reales.");
           } catch (err) {
               console.error("Error parsing backup file", err);
               alert("Error al leer el archivo. Asegúrate de que es un backup válido de Deltana PM (.json).");
@@ -223,12 +230,19 @@ const App: React.FC = () => {
   const handleSaveProject = (projectData: Omit<Project, 'id'>) => {
     if (editingProject) {
       setProjects(projects.map(p => p.id === editingProject.id ? { ...p, ...projectData } : p));
+      if (session) {
+        apiSaveProject(editingProject.id, false, projectData, session.user.id).catch(handlePersistError);
+      }
     } else {
+      const newId = crypto.randomUUID();
       const newProject: Project = {
         ...projectData,
-        id: `proj-${Date.now()}`,
+        id: newId,
       };
       setProjects([...projects, newProject]);
+      if (session) {
+        apiSaveProject(newId, true, projectData, session.user.id).catch(handlePersistError);
+      }
     }
     handleCloseProjectModal();
   };
@@ -236,10 +250,11 @@ const App: React.FC = () => {
   const handleDeleteProject = (projectId: string) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar esta propuesta? Esta acción no se puede deshacer.")) {
       setProjects(projects.filter(p => p.id !== projectId));
+      apiDeleteProject(projectId).catch(handlePersistError);
       handleCloseProjectModal();
     }
   };
-  
+
   const handleSaveCollaboratorFinancials = (projectId: string, memberContact: string, financialInfo: CollaboratorInfo | null) => {
     setProjects(currentProjects => {
         return currentProjects.map(p => {
@@ -259,6 +274,7 @@ const App: React.FC = () => {
             return p;
         });
     });
+    apiSaveCollaboratorFinancials(projectId, memberContact, financialInfo).catch(handlePersistError);
   };
 
   const handleRemoveCollaboratorFromProject = (projectId: string, memberContact: string) => {
@@ -274,6 +290,7 @@ const App: React.FC = () => {
           return p;
         });
       });
+      apiRemoveCollaboratorFromProject(projectId, memberContact).catch(handlePersistError);
       return true;
     }
     return false;
@@ -296,6 +313,7 @@ const App: React.FC = () => {
               return p;
           });
       });
+      apiSaveInternalFinancials(projectId, memberContact, costInfo).catch(handlePersistError);
   };
 
   const handleUpdateProjectWithMembers = (updatedProject: Project, newGlobalMembers?: TeamMember[]) => {
@@ -307,8 +325,9 @@ const App: React.FC = () => {
               return [...prev, ...toAdd];
           });
       }
+      apiUpdateProjectWithMembers(updatedProject).catch(handlePersistError);
   };
-  
+
   const handleSaveClientFinancials = (clientInfo: ClientInfo) => {
       if (!editingClientProject) return;
 
@@ -320,6 +339,7 @@ const App: React.FC = () => {
               return p;
           });
       });
+      apiSaveClientFinancials(editingClientProject.id, clientInfo).catch(handlePersistError);
       setEditingClientProject(null);
   };
 
@@ -336,13 +356,14 @@ const App: React.FC = () => {
       alert("Ya existe un miembro del equipo con este email de contacto.");
       return;
     }
-    
+
     const newCollaborator: TeamMember = {
       ...collaboratorData,
       type: MemberType.External,
     };
 
     setLoneCollaborators([...loneCollaborators, newCollaborator]);
+    apiSaveNewCollaborator(collaboratorData).catch(handlePersistError);
     handleCloseAddCollaboratorModal();
   };
 
@@ -352,6 +373,7 @@ const App: React.FC = () => {
       ...p,
       team: p.team.map(m => m.contact === contact ? { ...m, name: newName } : m)
     })));
+    apiUpdateMemberName(contact, newName).catch(handlePersistError);
   };
 
   const handleUpdateCollaboratorName = handleUpdateMemberName;
@@ -362,6 +384,7 @@ const App: React.FC = () => {
           ...prev,
           [contact]: rate
       }));
+      apiUpdateGlobalRate(contact, rate).catch(handlePersistError);
   };
 
   const handleUpdateInternalMemberType = (contact: string, type: string) => {
@@ -369,6 +392,7 @@ const App: React.FC = () => {
       ...p,
       team: p.team.map(m => m.contact === contact ? { ...m, internalMemberType: type } : m)
     })));
+    apiUpdateInternalMemberType(contact, type).catch(handlePersistError);
   };
 
   const handleDeleteGlobalMember = (contact: string) => {
@@ -377,6 +401,7 @@ const App: React.FC = () => {
       ...p,
       team: p.team.filter(m => m.contact !== contact)
     })));
+    apiDeleteGlobalMember(contact).catch(handlePersistError);
   };
 
   const renderView = () => {
@@ -384,44 +409,44 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard projects={projects} internalRates={internalRates} />;
       case 'projects':
-        return <Projects 
-                  projects={projects} 
+        return <Projects
+                  projects={projects}
                   internalRates={internalRates}
-                  onAddProject={handleOpenAddProjectModal} 
-                  onEditProject={handleOpenEditProjectModal} 
+                  onAddProject={handleOpenAddProjectModal}
+                  onEditProject={handleOpenEditProjectModal}
                />;
       case 'planning':
         return <Planning projects={projects} />;
       case 'team':
-        return <Team 
-                  projects={projects} 
-                  internalRates={internalRates} 
-                  onUpdateRate={handleUpdateGlobalRate} 
-                  onUpdateMemberType={handleUpdateInternalMemberType} 
-                  onUpdateMemberName={handleUpdateMemberName} 
+        return <Team
+                  projects={projects}
+                  internalRates={internalRates}
+                  onUpdateRate={handleUpdateGlobalRate}
+                  onUpdateMemberType={handleUpdateInternalMemberType}
+                  onUpdateMemberName={handleUpdateMemberName}
                   onDeleteMember={handleDeleteGlobalMember}
                />;
       case 'internal-team': // NEW VIEW
         return (
-          <InternalTeam 
-            projects={projects} 
-            globalRates={internalRates} 
+          <InternalTeam
+            projects={projects}
+            globalRates={internalRates}
             availableGlobalMembers={availableTeamMembers}
-            onUpdateInternalCost={handleSaveInternalFinancials} 
+            onUpdateInternalCost={handleSaveInternalFinancials}
             onUpdateProject={handleUpdateProjectWithMembers}
           />
         );
       case 'clients':
-        return <Clients 
-                  projects={projects} 
+        return <Clients
+                  projects={projects}
                   onAddClient={handleOpenAddProjectModal}
                   onEditFinancials={(project) => setEditingClientProject(project)}
                 />;
       case 'collaborators':
-        return <Collaborators 
-                  projects={projects} 
+        return <Collaborators
+                  projects={projects}
                   loneCollaborators={loneCollaborators}
-                  onSaveFinancials={handleSaveCollaboratorFinancials} 
+                  onSaveFinancials={handleSaveCollaboratorFinancials}
                   onRemoveFromProject={handleRemoveCollaboratorFromProject}
                   onAddCollaborator={handleOpenAddCollaboratorModal}
                   onUpdateCollaboratorName={handleUpdateCollaboratorName}
@@ -433,9 +458,26 @@ const App: React.FC = () => {
     }
   };
 
-  // If not authenticated, show Login Screen
-  if (!isAuthenticated) {
+  // Wait for the initial session check before deciding what to render, so a
+  // logged-in user doesn't flash the login screen on refresh.
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-gray-400">
+        Cargando...
+      </div>
+    );
+  }
+
+  if (!session) {
       return <Login onLogin={handleLogin} />;
+  }
+
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-gray-400">
+        Cargando datos...
+      </div>
+    );
   }
 
   // Determine container style based on view
@@ -443,14 +485,14 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-100 font-sans">
-      <Sidebar 
-        currentView={currentView} 
-        setCurrentView={setCurrentView} 
+      <Sidebar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
         onExportData={handleExportData}
         onImportData={handleImportData}
         lastDataUpdate={lastDataUpdate}
       />
-      
+
       {/* Logout Button (Positioned Absolute Top Right) */}
       <div className="fixed top-4 right-4 z-50">
         <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full border border-gray-700">
@@ -458,14 +500,14 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      <main 
+      <main
         className={`flex-1 p-4 sm:p-6 lg:p-10 ml-16 md:ml-64 transition-all duration-300 flex flex-col ${
             isFixedView ? 'h-screen overflow-hidden' : 'min-h-screen'
         }`}
       >
         {renderView()}
       </main>
-      
+
       {isProjectModalOpen && (
         <ProjectModal
           project={editingProject}
@@ -476,7 +518,7 @@ const App: React.FC = () => {
           onDelete={handleDeleteProject}
         />
       )}
-      
+
       {isAddCollaboratorModalOpen && (
         <AddCollaboratorModal
             onClose={handleCloseAddCollaboratorModal}
@@ -485,7 +527,7 @@ const App: React.FC = () => {
       )}
 
       {editingClientProject && (
-          <ClientFinancialsModal 
+          <ClientFinancialsModal
             project={editingClientProject}
             onClose={() => setEditingClientProject(null)}
             onSave={handleSaveClientFinancials}

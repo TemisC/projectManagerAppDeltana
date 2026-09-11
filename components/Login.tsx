@@ -4,18 +4,22 @@ import { LogoIcon } from './ui/Icons';
 import Card from './ui/Card';
 
 interface LoginProps {
-  onLogin: (password: string) => boolean;
+  onLogin: (email: string, password: string) => Promise<string | null>;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = onLogin(password);
-    if (!success) {
-      setError(true);
+    setSubmitting(true);
+    const errorMessage = await onLogin(email, password);
+    setSubmitting(false);
+    if (errorMessage) {
+      setError(errorMessage);
       setPassword('');
     }
   };
@@ -34,35 +38,49 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <Card className="bg-gray-800/50 border border-gray-700 shadow-2xl backdrop-blur-sm">
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Contraseña de acceso</label>
-                    <input 
-                        type="password" 
-                        value={password}
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <input
+                        type="email"
+                        value={email}
                         onChange={(e) => {
-                            setPassword(e.target.value);
-                            setError(false);
+                            setEmail(e.target.value);
+                            setError(null);
                         }}
-                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all text-center tracking-widest"
-                        placeholder="••••••••"
+                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
+                        placeholder="tu@deltana.com"
                         autoFocus
                     />
                 </div>
-                
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Contraseña de acceso</label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            setError(null);
+                        }}
+                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all text-center tracking-widest"
+                        placeholder="••••••••"
+                    />
+                </div>
+
                 {error && (
                     <div className="text-red-400 text-sm text-center bg-red-900/20 py-2 rounded border border-red-900/50 animate-pulse">
-                        Contraseña incorrecta
+                        {error}
                     </div>
                 )}
 
-                <button 
-                    type="submit" 
-                    className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-sky-900/40 hover:scale-[1.02] active:scale-[0.98]"
+                <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-sky-900/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100"
                 >
-                    Entrar
+                    {submitting ? 'Entrando...' : 'Entrar'}
                 </button>
             </form>
         </Card>
-        
+
         <p className="text-center text-gray-600 text-xs mt-8">
             &copy; {new Date().getFullYear()} Deltana PM System. Solo personal autorizado.
         </p>
