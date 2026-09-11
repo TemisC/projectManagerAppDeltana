@@ -324,6 +324,34 @@ export async function fetchProjects(): Promise<Project[]> {
   return (data as unknown as ProjectRow[]).map(mapProject);
 }
 
+// The SPA's Project type has no managerId field, so this is fetched
+// separately (only needed by the Gerencia-only executive dashboard).
+export async function fetchProjectManagers(): Promise<Record<string, { id: string; name: string }>> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id, manager_id, manager:profiles(id, name, email)');
+  if (error) throw error;
+
+  const result: Record<string, { id: string; name: string }> = {};
+  for (const row of data as unknown as {
+    id: string;
+    manager_id: string;
+    manager: { id: string; name: string | null; email: string } | null;
+  }[]) {
+    result[row.id] = {
+      id: row.manager_id,
+      name: row.manager?.name || row.manager?.email || 'Sin asignar',
+    };
+  }
+  return result;
+}
+
+export async function fetchCurrentProfile(userId: string): Promise<{ role: string; name: string | null } | null> {
+  const { data, error } = await supabase.from('profiles').select('role, name').eq('id', userId).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 // "Lone" collaborators: team_members not attached to any project yet.
 export async function fetchLoneCollaborators(): Promise<TeamMember[]> {
   const { data: allMembers, error: allError } = await supabase

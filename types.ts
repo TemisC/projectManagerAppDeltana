@@ -169,4 +169,4 @@ export interface Project {
   generalContact?: ContactInfo;
 }
 
-export type View = 'dashboard' | 'projects' | 'team' | 'clients' | 'collaborators' | 'internal-team' | 'planning' | 'economic-tracking';
+export type View = 'dashboard' | 'projects' | 'team' | 'clients' | 'collaborators' | 'internal-team' | 'planning' | 'economic-tracking' | 'executive-dashboard';

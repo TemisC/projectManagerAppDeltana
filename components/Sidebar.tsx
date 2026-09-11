@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { DashboardIcon, ProjectsIcon, TeamIcon, LogoIcon, ClientsIcon, CollaboratorsIcon, CalendarIcon, DownloadIcon, UploadIcon, BriefcaseIcon } from './ui/Icons';
+import { DashboardIcon, ProjectsIcon, TeamIcon, LogoIcon, ClientsIcon, CollaboratorsIcon, CalendarIcon, DownloadIcon, UploadIcon, BriefcaseIcon, TrendingUpIcon } from './ui/Icons';
 import type { View } from '../types';
 
 interface SidebarProps {
@@ -9,6 +9,7 @@ interface SidebarProps {
   onExportData: () => void;
   onImportData: (file: File) => void;
   lastDataUpdate: string | null;
+  isGerencia?: boolean;
 }
 
 const NavItem: React.FC<{
@@ -32,7 +33,7 @@ const NavItem: React.FC<{
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExportData, onImportData, lastDataUpdate }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExportData, onImportData, lastDataUpdate, isGerencia }) => {
   const iconClass = "h-6 w-6";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +59,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
           isActive={currentView === 'dashboard'}
           onClick={() => setCurrentView('dashboard')}
         />
+        {isGerencia && (
+          <NavItem
+            icon={<TrendingUpIcon className={iconClass} />}
+            label="Dashboard Ejecutivo"
+            isActive={currentView === 'executive-dashboard'}
+            onClick={() => setCurrentView('executive-dashboard')}
+          />
+        )}
         <NavItem
           icon={<ProjectsIcon className={iconClass} />}
           label="Proyectos"

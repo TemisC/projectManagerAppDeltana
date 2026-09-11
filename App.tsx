@@ -10,6 +10,7 @@ import Collaborators from './components/Collaborators';
 import InternalTeam from './components/InternalTeam'; // New Import
 import Planning from './components/Planning';
 import EconomicTracking from './components/EconomicTracking';
+import ExecutiveDashboard from './components/ExecutiveDashboard';
 import Login from './components/Login';
 import type { View, Project, CollaboratorInfo, TeamMember, ClientInfo, InternalCostInfo } from './types';
 import { MemberType } from './types';
@@ -17,7 +18,13 @@ import ProjectModal from './components/ProjectModal';
 import AddCollaboratorModal from './components/AddCollaboratorModal';
 import ClientFinancialsModal from './components/ClientFinancialsModal';
 import { supabase } from './lib/supabaseClient';
-import { fetchProjects, fetchLoneCollaborators, fetchInternalRates } from './lib/api/fetch';
+import {
+  fetchProjects,
+  fetchLoneCollaborators,
+  fetchInternalRates,
+  fetchCurrentProfile,
+  fetchProjectManagers,
+} from './lib/api/fetch';
 import {
   saveProject as apiSaveProject,
   deleteProject as apiDeleteProject,
@@ -59,6 +66,8 @@ const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loneCollaborators, setLoneCollaborators] = useState<TeamMember[]>([]);
   const [internalRates, setInternalRates] = useState<Record<string, number>>({});
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [projectManagers, setProjectManagers] = useState<Record<string, { id: string; name: string }>>({});
 
   // Track auth session
   useEffect(() => {
@@ -78,14 +87,25 @@ const App: React.FC = () => {
       setProjects([]);
       setLoneCollaborators([]);
       setInternalRates({});
+      setCurrentUserRole(null);
+      setProjectManagers({});
       return;
     }
     setDataLoading(true);
-    Promise.all([fetchProjects(), fetchLoneCollaborators(), fetchInternalRates()])
-      .then(([loadedProjects, loadedLoneCollaborators, loadedRates]) => {
+    Promise.all([
+      fetchProjects(),
+      fetchLoneCollaborators(),
+      fetchInternalRates(),
+      fetchCurrentProfile(session.user.id),
+    ])
+      .then(([loadedProjects, loadedLoneCollaborators, loadedRates, profile]) => {
         setProjects(loadedProjects);
         setLoneCollaborators(loadedLoneCollaborators);
         setInternalRates(loadedRates);
+        setCurrentUserRole(profile?.role ?? null);
+        if (profile?.role === 'gerencia') {
+          fetchProjectManagers().then(setProjectManagers).catch(handlePersistError);
+        }
       })
       .catch((err) => {
         console.error('Error cargando datos desde Supabase:', err);
@@ -453,6 +473,17 @@ const App: React.FC = () => {
                 />;
       case 'economic-tracking':
         return <EconomicTracking projects={projects} globalRates={internalRates} />;
+      case 'executive-dashboard':
+        if (currentUserRole !== 'gerencia') {
+          return <Dashboard projects={projects} internalRates={internalRates} />;
+        }
+        return (
+          <ExecutiveDashboard
+            projects={projects}
+            internalRates={internalRates}
+            projectManagers={projectManagers}
+          />
+        );
       default:
         return <Dashboard projects={projects} internalRates={internalRates} />;
     }
@@ -491,6 +522,7 @@ const App: React.FC = () => {
         onExportData={handleExportData}
         onImportData={handleImportData}
         lastDataUpdate={lastDataUpdate}
+        isGerencia={currentUserRole === 'gerencia'}
       />
 
       {/* Logout Button (Positioned Absolute Top Right) */}
