@@ -46,6 +46,12 @@ import {
 // rolls back the optimistic local state (matches the app's original
 // "update state, then persist" feel; a stale write just means a refresh
 // is needed to see the server's version again).
+const ROLE_LABELS: Record<string, string> = {
+  gerencia: 'Gerencia',
+  gestor: 'Gestor',
+  colaborador: 'Colaborador',
+};
+
 const handlePersistError = (err: unknown) => {
   console.error('Error al guardar en Supabase:', err);
   alert('No se pudo guardar el cambio en el servidor. Los cambios pueden no haberse sincronizado — recargá la página para verificar.');
@@ -67,6 +73,7 @@ const App: React.FC = () => {
   const [loneCollaborators, setLoneCollaborators] = useState<TeamMember[]>([]);
   const [internalRates, setInternalRates] = useState<Record<string, number>>({});
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [currentUserLabel, setCurrentUserLabel] = useState<string | null>(null);
   const [projectManagers, setProjectManagers] = useState<Record<string, { id: string; name: string }>>({});
 
   // Track auth session
@@ -88,6 +95,7 @@ const App: React.FC = () => {
       setLoneCollaborators([]);
       setInternalRates({});
       setCurrentUserRole(null);
+      setCurrentUserLabel(null);
       setProjectManagers({});
       return;
     }
@@ -103,6 +111,7 @@ const App: React.FC = () => {
         setLoneCollaborators(loadedLoneCollaborators);
         setInternalRates(loadedRates);
         setCurrentUserRole(profile?.role ?? null);
+        setCurrentUserLabel(profile?.name || profile?.email || session.user.email || null);
         if (profile?.role === 'gerencia') {
           fetchProjectManagers().then(setProjectManagers).catch(handlePersistError);
         }
@@ -525,8 +534,18 @@ const App: React.FC = () => {
         isGerencia={currentUserRole === 'gerencia'}
       />
 
-      {/* Logout Button (Positioned Absolute Top Right) */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Current user + Logout Button (Positioned Absolute Top Right) */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+        {currentUserLabel && (
+          <div className="text-right leading-tight hidden sm:block">
+            <p className="text-xs text-gray-300 font-medium">{currentUserLabel}</p>
+            {currentUserRole && (
+              <p className="text-[10px] text-sky-400 uppercase tracking-wider font-bold">
+                {ROLE_LABELS[currentUserRole] ?? currentUserRole}
+              </p>
+            )}
+          </div>
+        )}
         <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full border border-gray-700">
             Cerrar Sesión
         </button>
