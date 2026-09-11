@@ -1,0 +1,5 @@
+{
+  "name": "Project Management Dashboard",
+  "description": "An application to manage and track projects through different phases (proposal, in-progress, completed), and to manage the team members involved.",
+  "requestFramePermissions": []
+}
