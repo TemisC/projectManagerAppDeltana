@@ -13,6 +13,7 @@ import EconomicTracking from './components/EconomicTracking';
 import ExecutiveDashboard from './components/ExecutiveDashboard';
 import Administration from './components/Administration';
 import Login from './components/Login';
+import { SunIcon, MoonIcon } from './components/ui/Icons';
 import type { View, Project, CollaboratorInfo, TeamMember, ClientInfo, InternalCostInfo } from './types';
 import { MemberType } from './types';
 import ProjectModal from './components/ProjectModal';
@@ -64,6 +65,20 @@ const App: React.FC = () => {
   const [dataLoading, setDataLoading] = useState(false);
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
+
+  // Light/dark theme — applied via a data-theme attribute (see theme-light.css);
+  // components/ itself is never touched, this only affects the app shell after
+  // login (the Login screen has its own permanent light design).
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return localStorage.getItem('deltana_pm_theme') === 'light' ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('deltana_pm_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
 
   // Track last local backup export/import (informational only, not synced)
   const [lastDataUpdate, setLastDataUpdate] = useState<string | null>(() => {
@@ -546,16 +561,23 @@ const App: React.FC = () => {
       />
 
       {/* Current user + Logout Button (Positioned Absolute Top Right) */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+      <div className="fixed top-3 right-4 z-50 flex items-center gap-2 bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-full pl-3 pr-1.5 py-1.5 shadow-lg">
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-800"
+        >
+          {theme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+        </button>
         {currentUserLabel && (
-          <div className="text-right leading-tight hidden sm:block">
-            <p className="text-xs text-gray-300 font-medium">{currentUserLabel}</p>
+          <span className="text-xs text-gray-300 hidden sm:inline">
+            <span className="font-medium">{currentUserLabel}</span>
             {currentUserRole && (
-              <p className="text-[10px] text-sky-400 uppercase tracking-wider font-bold">
+              <span className="text-sky-400 uppercase tracking-wider font-bold ml-1.5">
                 {ROLE_LABELS[currentUserRole] ?? currentUserRole}
-              </p>
+              </span>
             )}
-          </div>
+          </span>
         )}
         <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full border border-gray-700">
             Cerrar Sesión
@@ -563,7 +585,7 @@ const App: React.FC = () => {
       </div>
 
       <main
-        className={`flex-1 p-4 sm:p-6 lg:p-10 ml-16 md:ml-64 transition-all duration-300 flex flex-col ${
+        className={`flex-1 px-4 sm:px-6 lg:px-10 pb-4 sm:pb-6 lg:pb-10 pt-16 sm:pt-20 ml-16 md:ml-64 transition-all duration-300 flex flex-col ${
             isFixedView ? 'h-screen overflow-hidden' : 'min-h-screen'
         }`}
       >
