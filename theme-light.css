@@ -57,6 +57,7 @@
 [data-theme="light"] .bg-gray-800\/90 { background-color: #ffffff !important; box-shadow: 0 0 0 1px #e2e8f0 !important; }
 [data-theme="light"] .bg-gray-850 { background-color: #ffffff !important; }
 [data-theme="light"] .bg-gray-900 { background-color: #ffffff !important; }
+[data-theme="light"] .bg-gray-900\/90 { background-color: #ffffff !important; box-shadow: 0 0 0 1px #e2e8f0 !important; }
 [data-theme="light"] .bg-gray-900\/30 { background-color: #ffffff !important; }
 [data-theme="light"] .bg-gray-900\/40 { background-color: #ffffff !important; }
 [data-theme="light"] .bg-gray-900\/50 { background-color: #ffffff !important; }

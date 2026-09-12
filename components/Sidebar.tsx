@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { DashboardIcon, ProjectsIcon, TeamIcon, LogoIcon, ClientsIcon, CollaboratorsIcon, CalendarIcon, DownloadIcon, UploadIcon, BriefcaseIcon, TrendingUpIcon, SettingsIcon } from './ui/Icons';
+import { DashboardIcon, ProjectsIcon, TeamIcon, ClientsIcon, CollaboratorsIcon, CalendarIcon, DownloadIcon, UploadIcon, BriefcaseIcon, TrendingUpIcon, SettingsIcon } from './ui/Icons';
 import type { View } from '../types';
 
 interface SidebarProps {
@@ -49,8 +49,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
   return (
     <aside className="fixed top-0 left-0 h-full w-16 md:w-64 bg-gray-800 text-white flex flex-col z-10 shadow-lg">
       <div className="flex items-center justify-center md:justify-start md:px-4 h-20 border-b border-gray-700">
-        <LogoIcon className="h-8 w-8 text-sky-400" />
-        <span className="ml-3 text-xl font-bold hidden md:inline">Deltana PM</span>
+        {/* Collapsed (icon-only) width: just the logo's icon mark */}
+        <div className="md:hidden h-10 w-10 rounded-md bg-white flex items-center justify-center p-1">
+          <img src="/images/logo-deltana-icon.png" alt="Deltana Engineering" className="h-full w-auto" />
+        </div>
+        {/* Expanded width: full logo lockup */}
+        <div className="hidden md:flex bg-white rounded-md px-2 py-1.5">
+          <img src="/images/logo-deltana.png" alt="Deltana Engineering" className="h-8 w-auto" />
+        </div>
       </div>
       <nav className="flex-1 mt-6 overflow-y-auto">
         <NavItem
