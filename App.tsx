@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -27,6 +27,7 @@ import {
   fetchCurrentProfile,
   fetchProjectManagers,
 } from './lib/api/fetch';
+import { updateMyThemePreference } from './lib/api/preferences';
 import {
   saveProject as apiSaveProject,
   deleteProject as apiDeleteProject,
@@ -78,7 +79,29 @@ const App: React.FC = () => {
     localStorage.setItem('deltana_pm_theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      if (session) {
+        updateMyThemePreference(next).catch(handlePersistError);
+      }
+      return next;
+    });
+  };
+
+  // User menu (profile pill -> dropdown with theme + logout)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Track last local backup export/import (informational only, not synced)
   const [lastDataUpdate, setLastDataUpdate] = useState<string | null>(() => {
@@ -133,6 +156,9 @@ const App: React.FC = () => {
         setInternalRates(loadedRates);
         setCurrentUserRole(profile?.role ?? null);
         setCurrentUserLabel(profile?.name || profile?.email || session.user.email || null);
+        if (profile?.theme_preference === 'light' || profile?.theme_preference === 'dark') {
+          setTheme(profile.theme_preference);
+        }
         if (profile?.role === 'gerencia') {
           fetchProjectManagers().then(setProjectManagers).catch(handlePersistError);
         }
@@ -560,28 +586,50 @@ const App: React.FC = () => {
         isGerencia={currentUserRole === 'gerencia'}
       />
 
-      {/* Current user + Logout Button (Positioned Absolute Top Right) */}
-      <div className="fixed top-3 right-4 z-50 flex items-center gap-2 bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-full pl-3 pr-1.5 py-1.5 shadow-lg">
+      {/* User menu (Positioned Absolute Top Right) */}
+      <div ref={userMenuRef} className="fixed top-3 right-4 z-50">
         <button
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-          className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-800"
+          onClick={() => setIsUserMenuOpen((o) => !o)}
+          className="flex items-center gap-2 bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-full pl-3 pr-2 py-1.5 shadow-lg hover:border-gray-500 transition-colors"
         >
-          {theme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+          {currentUserLabel && (
+            <span className="text-xs text-gray-300 hidden sm:inline">
+              <span className="font-medium">{currentUserLabel}</span>
+              {currentUserRole && (
+                <span className="text-sky-400 uppercase tracking-wider font-bold ml-1.5">
+                  {ROLE_LABELS[currentUserRole] ?? currentUserRole}
+                </span>
+              )}
+            </span>
+          )}
+          <span className="text-gray-500 text-[10px]">▾</span>
         </button>
-        {currentUserLabel && (
-          <span className="text-xs text-gray-300 hidden sm:inline">
-            <span className="font-medium">{currentUserLabel}</span>
-            {currentUserRole && (
-              <span className="text-sky-400 uppercase tracking-wider font-bold ml-1.5">
-                {ROLE_LABELS[currentUserRole] ?? currentUserRole}
-              </span>
-            )}
-          </span>
+
+        {isUserMenuOpen && (
+          <div className="absolute right-0 mt-2 w-52 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1.5 animate-fade-in">
+            <button
+              onClick={() => {
+                toggleTheme();
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+            >
+              {theme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+              {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+            </button>
+            <div className="my-1 border-t border-gray-700" />
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         )}
-        <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full border border-gray-700">
-            Cerrar Sesión
-        </button>
+
+        <style>{`
+          @keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+          .animate-fade-in { animation: fade-in 0.15s ease-out; }
+        `}</style>
       </div>
 
       <main
