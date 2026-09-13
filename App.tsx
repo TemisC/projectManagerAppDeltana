@@ -161,6 +161,7 @@ const App: React.FC = () => {
         }
         if (profile?.role === 'gerencia') {
           fetchProjectManagers().then(setProjectManagers).catch(handlePersistError);
+          setCurrentView('executive-dashboard');
         }
       })
       .catch((err) => {
