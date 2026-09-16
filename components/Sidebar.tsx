@@ -9,7 +9,8 @@ interface SidebarProps {
   onExportData: () => void;
   onImportData: (file: File) => void;
   lastDataUpdate: string | null;
-  isDireccion?: boolean;
+  canViewExecutiveDashboard?: boolean;
+  isAdministracion?: boolean;
 }
 
 const NavItem: React.FC<{
@@ -33,7 +34,7 @@ const NavItem: React.FC<{
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExportData, onImportData, lastDataUpdate, isDireccion }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExportData, onImportData, lastDataUpdate, canViewExecutiveDashboard, isAdministracion }) => {
   const iconClass = "h-6 w-6";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
           isActive={currentView === 'dashboard'}
           onClick={() => setCurrentView('dashboard')}
         />
-        {isDireccion && (
+        {canViewExecutiveDashboard && (
           <NavItem
             icon={<TrendingUpIcon className={iconClass} />}
             label="Dashboard Ejecutivo"
@@ -79,12 +80,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
           isActive={currentView === 'projects'}
           onClick={() => setCurrentView('projects')}
         />
-        <NavItem
-          icon={<CalendarIcon className={iconClass} />}
-          label="Planificación"
-          isActive={currentView === 'planning'}
-          onClick={() => setCurrentView('planning')}
-        />
+        {!canViewExecutiveDashboard && (
+          <NavItem
+            icon={<CalendarIcon className={iconClass} />}
+            label="Planificación"
+            isActive={currentView === 'planning'}
+            onClick={() => setCurrentView('planning')}
+          />
+        )}
         <NavItem
           icon={<BriefcaseIcon className={iconClass} />}
           label="Coste Interno"
@@ -115,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
           isActive={currentView === 'economic-tracking'}
           onClick={() => setCurrentView('economic-tracking')}
         />
-        {isDireccion && (
+        {isAdministracion && (
           <NavItem
             icon={<SettingsIcon className={iconClass} />}
             label="Administración"

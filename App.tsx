@@ -51,6 +51,7 @@ import {
 // is needed to see the server's version again).
 const ROLE_LABELS: Record<string, string> = {
   direccion: 'Dirección',
+  administracion: 'Administración',
   gestor: 'Gestor',
   colaborador: 'Colaborador',
 };
@@ -71,7 +72,10 @@ const App: React.FC = () => {
   // components/ itself is never touched, this only affects the app shell after
   // login (the Login screen has its own permanent light design).
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return localStorage.getItem('deltana_pm_theme') === 'light' ? 'light' : 'dark';
+    // Light by default (matches profiles.theme_preference's DB default for
+    // brand-new accounts) — only an explicit prior choice of dark sticks
+    // before the real per-account preference loads from the profile.
+    return localStorage.getItem('deltana_pm_theme') === 'dark' ? 'dark' : 'light';
   });
 
   useEffect(() => {
@@ -159,7 +163,7 @@ const App: React.FC = () => {
         if (profile?.theme_preference === 'light' || profile?.theme_preference === 'dark') {
           setTheme(profile.theme_preference);
         }
-        if (profile?.role === 'direccion') {
+        if (profile?.role === 'direccion' || profile?.role === 'administracion') {
           fetchProjectManagers().then(setProjectManagers).catch(handlePersistError);
           setCurrentView('executive-dashboard');
         }
@@ -531,7 +535,7 @@ const App: React.FC = () => {
       case 'economic-tracking':
         return <EconomicTracking projects={projects} globalRates={internalRates} />;
       case 'executive-dashboard':
-        if (currentUserRole !== 'direccion') {
+        if (currentUserRole !== 'direccion' && currentUserRole !== 'administracion') {
           return <Dashboard projects={projects} internalRates={internalRates} />;
         }
         return (
@@ -542,7 +546,7 @@ const App: React.FC = () => {
           />
         );
       case 'administration':
-        if (currentUserRole !== 'direccion') {
+        if (currentUserRole !== 'administracion') {
           return <Dashboard projects={projects} internalRates={internalRates} />;
         }
         return <Administration />;
@@ -584,7 +588,8 @@ const App: React.FC = () => {
         onExportData={handleExportData}
         onImportData={handleImportData}
         lastDataUpdate={lastDataUpdate}
-        isDireccion={currentUserRole === 'direccion'}
+        canViewExecutiveDashboard={currentUserRole === 'direccion' || currentUserRole === 'administracion'}
+        isAdministracion={currentUserRole === 'administracion'}
       />
 
       {/* User menu (Positioned Absolute Top Right) */}

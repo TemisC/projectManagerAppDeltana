@@ -1,5 +1,5 @@
 // Admin-only endpoint: creates a real Supabase Auth user and sets their
-// profiles.role, so Dirección can manage the team from inside the app
+// profiles.role, so Administración can manage the team from inside the app
 // instead of the Supabase dashboard. The service role key never leaves
 // this server-side function — the browser only ever calls this endpoint
 // with the caller's own session token.
@@ -18,7 +18,7 @@ const json = (body: unknown, status = 200) =>
     headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
   });
 
-const VALID_ROLES = ["direccion", "gestor", "colaborador"];
+const VALID_ROLES = ["direccion", "administracion", "gestor", "colaborador"];
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -55,8 +55,8 @@ Deno.serve(async (req: Request) => {
       .select("role")
       .eq("id", caller.id)
       .single();
-    if (profileError || callerProfile?.role !== "direccion") {
-      return json({ error: "Solo Dirección puede crear usuarios." }, 403);
+    if (profileError || callerProfile?.role !== "administracion") {
+      return json({ error: "Solo Administración puede crear usuarios." }, 403);
     }
 
     const { email, password, role, name } = await req.json();

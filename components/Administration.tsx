@@ -142,6 +142,7 @@ const Administration: React.FC = () => {
               <option value="colaborador">Colaborador</option>
               <option value="gestor">Gestor</option>
               <option value="direccion">Dirección</option>
+              <option value="administracion">Administración</option>
             </select>
           </div>
           <div className="md:col-span-2">
@@ -198,6 +199,7 @@ const Administration: React.FC = () => {
                         <option value="colaborador">Colaborador</option>
                         <option value="gestor">Gestor</option>
                         <option value="direccion">Dirección</option>
+                        <option value="administracion">Administración</option>
                       </select>
                     </td>
                     <td className="py-2 pl-2">
