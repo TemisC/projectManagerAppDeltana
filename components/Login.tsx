@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
+import { EyeIcon, EyeOffIcon } from './ui/Icons';
 
 interface LoginProps {
   onLogin: (email: string, password: string) => Promise<string | null>;
@@ -12,6 +13,7 @@ const HERO_IMAGES = ['/images/login/hero-1.jpg', '/images/login/hero-2.jpg', '/i
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -84,16 +86,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Contraseña</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(null);
-                }}
-                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#FBA628] focus:border-[#FBA628] outline-none transition-all"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
+                  className="w-full bg-white border border-gray-300 rounded-lg pl-4 pr-11 py-2.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#FBA628] focus:border-[#FBA628] outline-none transition-all"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                  title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {error && (
