@@ -46,7 +46,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({ title, headers, data, c
   </div>
 );
 
-const ProjectFinancialsCard: React.FC<{project: Project; onEdit: () => void}> = ({ project, onEdit }) => {
+const ProjectFinancialsCard: React.FC<{project: Project; onEdit: () => void; readOnly?: boolean}> = ({ project, onEdit, readOnly }) => {
     
     // Financial Calculations
     // SAFE ACCESS: Use optional chaining and default to empty arrays to handle legacy data
@@ -145,12 +145,14 @@ const ProjectFinancialsCard: React.FC<{project: Project; onEdit: () => void}> = 
                         </div>
                     )}
                 </div>
-                <button 
-                    onClick={onEdit}
-                    className="mt-3 sm:mt-0 bg-sky-600/90 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm transition-colors shadow-lg shadow-sky-900/20 font-medium"
-                >
-                    {project.clientInfo ? 'Gestionar Económicos' : 'Inicializar Económicos'}
-                </button>
+                {!readOnly && (
+                    <button
+                        onClick={onEdit}
+                        className="mt-3 sm:mt-0 bg-sky-600/90 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm transition-colors shadow-lg shadow-sky-900/20 font-medium"
+                    >
+                        {project.clientInfo ? 'Gestionar Económicos' : 'Inicializar Económicos'}
+                    </button>
+                )}
             </div>
 
             {/* Financial Info */}
@@ -401,10 +403,11 @@ const Clients: React.FC<ClientsProps> = ({ projects, onAddClient, onEditFinancia
                     
                     {clients.find(([name]) => name === selectedClient)?.[1]
                      .map(project => (
-                        <ProjectFinancialsCard 
-                            key={project.id} 
-                            project={project} 
+                        <ProjectFinancialsCard
+                            key={project.id}
+                            project={project}
                             onEdit={() => onEditFinancials(project)}
+                            readOnly={readOnly}
                         />
                      ))
                     }

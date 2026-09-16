@@ -8,8 +8,8 @@ import { PencilIcon, TrashIcon } from './ui/Icons';
 interface TeamProps {
   projects: Project[];
   internalRates: Record<string, number>;
-  onUpdateRate: (contact: string, rate: number) => void;
-  onUpdateMemberType: (contact: string, type: string) => void;
+  onUpdateRate?: (contact: string, rate: number) => void;
+  onUpdateMemberType?: (contact: string, type: string) => void;
   onUpdateMemberName?: (contact: string, newName: string) => void;
   onDeleteMember?: (contact: string) => void;
 }
@@ -228,8 +228,8 @@ const Team: React.FC<TeamProps> = ({ projects, internalRates, onUpdateRate, onUp
           member={selectedMember as any} // Cast because the internal structure slightly differs in types but is compatible for display
           projects={projects}
           internalRate={internalRates[selectedMember.contact]}
-          onUpdateRate={selectedMember.type === MemberType.Internal ? (rate) => onUpdateRate(selectedMember.contact, rate) : undefined}
-          onUpdateMemberType={selectedMember.type === MemberType.Internal ? (type) => onUpdateMemberType(selectedMember.contact, type) : undefined}
+          onUpdateRate={selectedMember.type === MemberType.Internal && onUpdateRate ? (rate) => onUpdateRate(selectedMember.contact, rate) : undefined}
+          onUpdateMemberType={selectedMember.type === MemberType.Internal && onUpdateMemberType ? (type) => onUpdateMemberType(selectedMember.contact, type) : undefined}
           onUpdateMemberName={onUpdateMemberName ? (newName) => {
             onUpdateMemberName(selectedMember.contact, newName);
             setSelectedMember(prev => prev ? { ...prev, name: newName } : null);

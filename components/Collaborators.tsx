@@ -13,6 +13,7 @@ interface CollaboratorsProps {
   onRemoveFromProject: (projectId: string, memberContact: string) => boolean;
   onAddCollaborator: () => void;
   onUpdateCollaboratorName: (contact: string, newName: string) => void;
+  readOnly?: boolean;
 }
 
 const formatEuro = (amount: number) => (
@@ -160,7 +161,7 @@ const DetailModal: React.FC<{ data: DetailModalData; onClose: () => void }> = ({
     );
 };
 
-const ProjectCollaboratorCard: React.FC<{ project: Project; collaborator: TeamMember, onEdit: () => void; onViewDetails: (type: 'AGREED' | 'BILLED' | 'PLANNED') => void; }> = ({ project, collaborator, onEdit, onViewDetails }) => {
+const ProjectCollaboratorCard: React.FC<{ project: Project; collaborator: TeamMember, onEdit: () => void; onViewDetails: (type: 'AGREED' | 'BILLED' | 'PLANNED') => void; readOnly?: boolean; }> = ({ project, collaborator, onEdit, onViewDetails, readOnly }) => {
     
     // Financial Calculations
     const info = collaborator.collaboratorInfo;
@@ -212,9 +213,11 @@ const ProjectCollaboratorCard: React.FC<{ project: Project; collaborator: TeamMe
                   <span className="block text-xs font-mono text-gray-400 mb-1">{project.code}</span>
                   <h3 className="text-lg font-bold text-sky-400">{project.name}</h3>
               </div>
-              <button onClick={onEdit} className="text-xs bg-gray-700 hover:bg-gray-600 text-white font-medium py-1.5 px-3 rounded-lg transition-colors border border-gray-600">
-                {info ? 'Editar Gestión' : 'Configurar Gestión'}
-              </button>
+              {!readOnly && (
+                <button onClick={onEdit} className="text-xs bg-gray-700 hover:bg-gray-600 text-white font-medium py-1.5 px-3 rounded-lg transition-colors border border-gray-600">
+                  {info ? 'Editar Gestión' : 'Configurar Gestión'}
+                </button>
+              )}
             </div>
 
             {info ? (
@@ -318,7 +321,7 @@ const ProjectCollaboratorCard: React.FC<{ project: Project; collaborator: TeamMe
     );
 }
 
-const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborators, onSaveFinancials, onRemoveFromProject, onAddCollaborator, onUpdateCollaboratorName }) => {
+const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborators, onSaveFinancials, onRemoveFromProject, onAddCollaborator, onUpdateCollaboratorName, readOnly }) => {
   const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
@@ -398,13 +401,15 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborato
       <div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Gestión de Colaboradores</h1>
-          <button 
-              onClick={onAddCollaborator}
-              className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-900/30"
-            >
-              <PlusIcon className="w-5 h-5"/>
-              Añadir Colaborador
-          </button>
+          {!readOnly && (
+            <button
+                onClick={onAddCollaborator}
+                className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-900/30"
+              >
+                <PlusIcon className="w-5 h-5"/>
+                Añadir Colaborador
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -458,15 +463,17 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborato
                             ) : (
                                 <>
                                     <h2 className="text-2xl font-bold text-white">{selectedData.member.name}</h2>
-                                    <button 
-                                        onClick={handleStartEditName}
-                                        className="text-gray-500 hover:text-sky-400 p-1 transition-colors"
-                                        title="Editar nombre"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                        </svg>
-                                    </button>
+                                    {!readOnly && (
+                                        <button
+                                            onClick={handleStartEditName}
+                                            className="text-gray-500 hover:text-sky-400 p-1 transition-colors"
+                                            title="Editar nombre"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </button>
+                                    )}
                                 </>
                             )}
                             <span className="text-sm text-gray-500">{selectedData.member.role} {selectedData.member.company ? ` - ${selectedData.member.company}` : ''}</span>
@@ -482,6 +489,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborato
                                     collaborator={memberInProject} 
                                     onEdit={() => setFinancialsModalData({ project, collaborator: memberInProject })}
                                     onViewDetails={(type) => handleViewDetails(memberInProject, type)}
+                                    readOnly={readOnly}
                                 />
                     })}
                  </div>

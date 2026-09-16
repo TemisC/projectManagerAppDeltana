@@ -499,15 +499,17 @@ const App: React.FC = () => {
                />;
       case 'planning':
         return <Planning projects={projects} />;
-      case 'team':
+      case 'team': {
+        const isTeamReadOnly = currentUserRole === 'direccion' || currentUserRole === 'administracion';
         return <Team
                   projects={projects}
                   internalRates={internalRates}
-                  onUpdateRate={handleUpdateGlobalRate}
-                  onUpdateMemberType={handleUpdateInternalMemberType}
-                  onUpdateMemberName={handleUpdateMemberName}
-                  onDeleteMember={handleDeleteGlobalMember}
+                  onUpdateRate={isTeamReadOnly ? undefined : handleUpdateGlobalRate}
+                  onUpdateMemberType={isTeamReadOnly ? undefined : handleUpdateInternalMemberType}
+                  onUpdateMemberName={isTeamReadOnly ? undefined : handleUpdateMemberName}
+                  onDeleteMember={isTeamReadOnly ? undefined : handleDeleteGlobalMember}
                />;
+      }
       case 'internal-team': // NEW VIEW
         return (
           <InternalTeam
@@ -533,6 +535,7 @@ const App: React.FC = () => {
                   onRemoveFromProject={handleRemoveCollaboratorFromProject}
                   onAddCollaborator={handleOpenAddCollaboratorModal}
                   onUpdateCollaboratorName={handleUpdateCollaboratorName}
+                  readOnly={currentUserRole === 'direccion' || currentUserRole === 'administracion'}
                 />;
       case 'economic-tracking':
         return <EconomicTracking projects={projects} globalRates={internalRates} />;
