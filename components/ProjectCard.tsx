@@ -8,6 +8,7 @@ import { MailIcon } from './ui/Icons';
 interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
+  readOnly?: boolean;
 }
 
 const EditIcon: React.FC<{className?: string}> = ({className}) => (
@@ -30,7 +31,7 @@ const statusBadgeStyles = {
 };
 
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, readOnly }) => {
   return (
     <Card className={`border-l-4 ${statusStyles[project.status]}`}>
       <div className="flex justify-between items-start">
@@ -47,9 +48,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
           <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusBadgeStyles[project.status]}`}>
             {project.status}
           </span>
-          <button onClick={() => onEdit(project)} className="text-gray-400 hover:text-white transition-colors">
-            <EditIcon className="w-5 h-5" />
-          </button>
+          {!readOnly && (
+            <button onClick={() => onEdit(project)} className="text-gray-400 hover:text-white transition-colors">
+              <EditIcon className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
       <p className="text-sm text-gray-400 mb-4">{project.statusDetail}</p>

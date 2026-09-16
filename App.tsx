@@ -495,6 +495,7 @@ const App: React.FC = () => {
                   internalRates={internalRates}
                   onAddProject={handleOpenAddProjectModal}
                   onEditProject={handleOpenEditProjectModal}
+                  readOnly={currentUserRole === 'direccion' || currentUserRole === 'administracion'}
                />;
       case 'planning':
         return <Planning projects={projects} />;
@@ -522,6 +523,7 @@ const App: React.FC = () => {
                   projects={projects}
                   onAddClient={handleOpenAddProjectModal}
                   onEditFinancials={(project) => setEditingClientProject(project)}
+                  readOnly={currentUserRole === 'direccion' || currentUserRole === 'administracion'}
                 />;
       case 'collaborators':
         return <Collaborators

@@ -11,6 +11,7 @@ interface ProjectsProps {
   internalRates: Record<string, number>;
   onAddProject: () => void;
   onEditProject: (project: Project) => void;
+  readOnly?: boolean;
 }
 
 type ProjectTab = ProjectStatus | 'all';
@@ -62,7 +63,7 @@ const calculateTotalHours = (ranges: InternalWorkRange[]): number => {
 const formatEuro = (amount: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
 
-const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProject, onEditProject }) => {
+const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProject, onEditProject, readOnly }) => {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectStatus.InProgress);
 
   const TABS: { id: ProjectTab; label: string }[] = [
@@ -170,13 +171,15 @@ const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProje
               </button>
             ))}
           </div>
-          <button 
-            onClick={onAddProject}
-            className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors"
-          >
-            <PlusIcon className="w-5 h-5"/>
-            Añadir Proyecto
-          </button>
+          {!readOnly && (
+            <button
+              onClick={onAddProject}
+              className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors"
+            >
+              <PlusIcon className="w-5 h-5"/>
+              Añadir Proyecto
+            </button>
+          )}
         </div>
       </div>
 
@@ -264,7 +267,7 @@ const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProje
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredProjects.length > 0 ? (
           filteredProjects.map(project => (
-            <ProjectCard key={project.id} project={project} onEdit={onEditProject} />
+            <ProjectCard key={project.id} project={project} onEdit={onEditProject} readOnly={readOnly} />
           ))
         ) : (
           <p className="text-gray-400 col-span-full text-center py-10">No hay proyectos en esta categoría.</p>
