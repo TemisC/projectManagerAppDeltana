@@ -79,7 +79,7 @@ const Administration: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white">Administración</h1>
         <p className="text-gray-400 mt-2 max-w-3xl text-sm">
-          Alta de usuarios y gestión de roles. Solo Gerencia puede ver y usar esta pantalla.
+          Alta de usuarios y gestión de roles. Solo Dirección puede ver y usar esta pantalla.
         </p>
       </div>
 
@@ -141,7 +141,7 @@ const Administration: React.FC = () => {
             >
               <option value="colaborador">Colaborador</option>
               <option value="gestor">Gestor</option>
-              <option value="gerencia">Gerencia</option>
+              <option value="direccion">Dirección</option>
             </select>
           </div>
           <div className="md:col-span-2">
@@ -197,7 +197,7 @@ const Administration: React.FC = () => {
                       >
                         <option value="colaborador">Colaborador</option>
                         <option value="gestor">Gestor</option>
-                        <option value="gerencia">Gerencia</option>
+                        <option value="direccion">Dirección</option>
                       </select>
                     </td>
                     <td className="py-2 pl-2">

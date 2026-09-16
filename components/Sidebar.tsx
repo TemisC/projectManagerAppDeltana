@@ -9,7 +9,7 @@ interface SidebarProps {
   onExportData: () => void;
   onImportData: (file: File) => void;
   lastDataUpdate: string | null;
-  isGerencia?: boolean;
+  isDireccion?: boolean;
 }
 
 const NavItem: React.FC<{
@@ -33,7 +33,7 @@ const NavItem: React.FC<{
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExportData, onImportData, lastDataUpdate, isGerencia }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExportData, onImportData, lastDataUpdate, isDireccion }) => {
   const iconClass = "h-6 w-6";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
           isActive={currentView === 'dashboard'}
           onClick={() => setCurrentView('dashboard')}
         />
-        {isGerencia && (
+        {isDireccion && (
           <NavItem
             icon={<TrendingUpIcon className={iconClass} />}
             label="Dashboard Ejecutivo"
@@ -115,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
           isActive={currentView === 'economic-tracking'}
           onClick={() => setCurrentView('economic-tracking')}
         />
-        {isGerencia && (
+        {isDireccion && (
           <NavItem
             icon={<SettingsIcon className={iconClass} />}
             label="Administración"

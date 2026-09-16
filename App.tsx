@@ -50,7 +50,7 @@ import {
 // "update state, then persist" feel; a stale write just means a refresh
 // is needed to see the server's version again).
 const ROLE_LABELS: Record<string, string> = {
-  gerencia: 'Gerencia',
+  direccion: 'Dirección',
   gestor: 'Gestor',
   colaborador: 'Colaborador',
 };
@@ -147,7 +147,7 @@ const App: React.FC = () => {
     ])
       .then(([loadedProjects, loadedLoneCollaborators, loadedRates, profile]) => {
         if (profile && profile.active === false) {
-          alert('Tu cuenta está desactivada. Contactá a Gerencia.');
+          alert('Tu cuenta está desactivada. Contactá a Dirección.');
           supabase.auth.signOut();
           return;
         }
@@ -159,7 +159,7 @@ const App: React.FC = () => {
         if (profile?.theme_preference === 'light' || profile?.theme_preference === 'dark') {
           setTheme(profile.theme_preference);
         }
-        if (profile?.role === 'gerencia') {
+        if (profile?.role === 'direccion') {
           fetchProjectManagers().then(setProjectManagers).catch(handlePersistError);
           setCurrentView('executive-dashboard');
         }
@@ -531,7 +531,7 @@ const App: React.FC = () => {
       case 'economic-tracking':
         return <EconomicTracking projects={projects} globalRates={internalRates} />;
       case 'executive-dashboard':
-        if (currentUserRole !== 'gerencia') {
+        if (currentUserRole !== 'direccion') {
           return <Dashboard projects={projects} internalRates={internalRates} />;
         }
         return (
@@ -542,7 +542,7 @@ const App: React.FC = () => {
           />
         );
       case 'administration':
-        if (currentUserRole !== 'gerencia') {
+        if (currentUserRole !== 'direccion') {
           return <Dashboard projects={projects} internalRates={internalRates} />;
         }
         return <Administration />;
@@ -584,7 +584,7 @@ const App: React.FC = () => {
         onExportData={handleExportData}
         onImportData={handleImportData}
         lastDataUpdate={lastDataUpdate}
-        isGerencia={currentUserRole === 'gerencia'}
+        isDireccion={currentUserRole === 'direccion'}
       />
 
       {/* User menu (Positioned Absolute Top Right) */}

@@ -325,7 +325,7 @@ export async function fetchProjects(): Promise<Project[]> {
 }
 
 // The SPA's Project type has no managerId field, so this is fetched
-// separately (only needed by the Gerencia-only executive dashboard).
+// separately (only needed by the Dirección-only executive dashboard).
 export async function fetchProjectManagers(): Promise<Record<string, { id: string; name: string }>> {
   const { data, error } = await supabase
     .from('projects')
