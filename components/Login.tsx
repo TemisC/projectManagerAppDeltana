@@ -37,7 +37,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div
         className="hidden md:flex md:w-1/2 relative flex-col justify-end p-12 text-white"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.35), rgba(15,23,42,0.88)), url('${heroImage}')`,
+          backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.55) 0%, rgba(15,23,42,0.6) 45%, rgba(15,23,42,0.92) 100%), url('${heroImage}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -45,10 +45,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="mb-8 bg-white/95 rounded-lg px-4 py-3 inline-block w-fit shadow-lg">
           <img src="/images/logo-deltana.png" alt="Deltana Engineering" className="h-9" />
         </div>
-        <h2 className="text-3xl font-extrabold leading-tight max-w-md" style={montserrat}>
+        <h2 className="text-3xl font-extrabold leading-tight max-w-md" style={{ ...montserrat, textShadow: '0 2px 16px rgba(0,0,0,0.85)' }}>
           Enfoque global y una metodología única para cada proyecto.
         </h2>
-        <p className="text-gray-300 mt-4 max-w-sm text-sm">
+        <p className="text-gray-200 mt-4 max-w-sm text-sm" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.85)' }}>
           Gestión de proyectos, equipos y rentabilidad para nuestro estudio de ingeniería y arquitectura.
         </p>
       </div>
