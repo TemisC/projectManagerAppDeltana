@@ -59,7 +59,31 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Solo Administración puede crear usuarios." }, 403);
     }
 
-    const { email, password, role, name } = await req.json();
+    const body = await req.json();
+
+    // Admin client — only ever used here, server-side, never sent to the browser.
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    if (body.action === "reset_password") {
+      const { userId, newPassword } = body;
+      if (!userId || !newPassword) {
+        return json({ error: "userId y newPassword son obligatorios." }, 400);
+      }
+      if (newPassword.length < 8) {
+        return json({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
+      }
+
+      const { error: resetError } = await adminClient.auth.admin.updateUserById(userId, {
+        password: newPassword,
+      });
+      if (resetError) {
+        return json({ error: resetError.message }, 400);
+      }
+
+      return json({ id: userId, reset: true });
+    }
+
+    const { email, password, role, name } = body;
     if (!email || !password || !role) {
       return json({ error: "Email, contraseña y rol son obligatorios." }, 400);
     }
@@ -69,9 +93,6 @@ Deno.serve(async (req: Request) => {
     if (password.length < 8) {
       return json({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
     }
-
-    // Admin client — only ever used here, server-side, never sent to the browser.
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: created, error: createError } = await adminClient.auth.admin.createUser({
       email,

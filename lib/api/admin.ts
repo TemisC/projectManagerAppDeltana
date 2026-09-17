@@ -28,6 +28,20 @@ export async function updateProfileActive(userId: string, active: boolean): Prom
   if (error) throw error;
 }
 
+async function unwrapFunctionError(error: unknown): Promise<never> {
+  // Supabase JS wraps the function's JSON error body inside `error.context`
+  const context = (error as { context?: Response }).context;
+  if (context) {
+    try {
+      const body = await context.json();
+      throw new Error(body.error ?? (error as Error).message);
+    } catch {
+      throw error;
+    }
+  }
+  throw error;
+}
+
 export async function createUser(
   email: string,
   password: string,
@@ -37,19 +51,15 @@ export async function createUser(
   const { data, error } = await supabase.functions.invoke('admin-create-user', {
     body: { email, password, role, name },
   });
-  if (error) {
-    // Supabase JS wraps the function's JSON error body inside `error.context`
-    const context = (error as { context?: Response }).context;
-    if (context) {
-      try {
-        const body = await context.json();
-        throw new Error(body.error ?? error.message);
-      } catch {
-        throw error;
-      }
-    }
-    throw error;
-  }
+  if (error) return unwrapFunctionError(error);
   if (data?.error) throw new Error(data.error);
   return data;
+}
+
+export async function resetUserPassword(userId: string, newPassword: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('admin-create-user', {
+    body: { action: 'reset_password', userId, newPassword },
+  });
+  if (error) return unwrapFunctionError(error);
+  if (data?.error) throw new Error(data.error);
 }

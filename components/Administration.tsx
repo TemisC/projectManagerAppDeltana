@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Card from './ui/Card';
 import { PlusIcon } from './ui/Icons';
 import type { UserProfile } from '../lib/api/admin';
-import { fetchAllProfiles, updateProfileRole, updateProfileActive, createUser } from '../lib/api/admin';
+import { fetchAllProfiles, updateProfileRole, updateProfileActive, createUser, resetUserPassword } from '../lib/api/admin';
 
 const generatePassword = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
@@ -23,6 +23,9 @@ const Administration: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [createdInfo, setCreatedInfo] = useState<{ email: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [resettingId, setResettingId] = useState<string | null>(null);
+  const [resetInfo, setResetInfo] = useState<{ email: string; password: string } | null>(null);
+  const [resetCopied, setResetCopied] = useState(false);
 
   const loadProfiles = () => {
     setLoading(true);
@@ -74,6 +77,24 @@ const Administration: React.FC = () => {
       setError(err.message || String(err));
       loadProfiles();
     });
+  };
+
+  const handleResetPassword = async (user: UserProfile) => {
+    if (!window.confirm(`¿Restablecer la contraseña de ${user.email}? Se generará una nueva y la anterior dejará de funcionar.`)) {
+      return;
+    }
+    const newPassword = generatePassword();
+    setResettingId(user.id);
+    setError(null);
+    try {
+      await resetUserPassword(user.id, newPassword);
+      setResetInfo({ email: user.email, password: newPassword });
+      setResetCopied(false);
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setResettingId(null);
+    }
   };
 
   return (
@@ -194,8 +215,43 @@ const Administration: React.FC = () => {
         )}
       </Card>
 
-      <Card>
+      <Card className="mb-8">
         <h2 className="text-lg font-bold text-white mb-4">Usuarios existentes</h2>
+
+        {resetInfo && (
+          <div className="mb-4 p-4 bg-emerald-950/30 border border-emerald-500/30 rounded-lg text-sm text-emerald-300">
+            <p className="font-bold mb-1">Contraseña restablecida — compartile estos datos:</p>
+            <p>
+              Email: <span className="font-mono text-white">{resetInfo.email}</span>
+            </p>
+            <p>
+              Contraseña nueva: <span className="font-mono text-white">{resetInfo.password}</span>
+            </p>
+            <p className="text-xs text-emerald-400/80 mt-2 italic">
+              Esta contraseña no se guarda en ningún lado ni se puede volver a ver: copiala ahora.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(`Email: ${resetInfo.email}\nContraseña: ${resetInfo.password}`);
+                  setResetCopied(true);
+                }}
+                className="text-xs font-bold px-3 py-1.5 rounded bg-emerald-700/50 hover:bg-emerald-700 text-white transition-colors"
+              >
+                {resetCopied ? '✓ Copiado' : 'Copiar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setResetInfo(null)}
+                className="text-xs font-medium px-3 py-1.5 rounded bg-gray-700/50 hover:bg-gray-700 text-gray-300 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <p className="text-gray-500 text-sm">Cargando...</p>
         ) : (
@@ -206,7 +262,8 @@ const Administration: React.FC = () => {
                   <th className="py-2 pr-2">Email</th>
                   <th className="py-2 px-2">Nombre</th>
                   <th className="py-2 px-2">Rol</th>
-                  <th className="py-2 pl-2">Activo</th>
+                  <th className="py-2 px-2">Activo</th>
+                  <th className="py-2 pl-2 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -226,7 +283,7 @@ const Administration: React.FC = () => {
                         <option value="administracion">Administración</option>
                       </select>
                     </td>
-                    <td className="py-2 pl-2">
+                    <td className="py-2 px-2">
                       <button
                         onClick={() => handleToggleActive(p.id, !p.active)}
                         className={`text-xs px-2 py-1 rounded transition-colors ${
@@ -234,6 +291,16 @@ const Administration: React.FC = () => {
                         }`}
                       >
                         {p.active ? 'Activo' : 'Inactivo'}
+                      </button>
+                    </td>
+                    <td className="py-2 pl-2 text-right">
+                      <button
+                        onClick={() => handleResetPassword(p)}
+                        disabled={resettingId === p.id}
+                        className="text-xs px-2 py-1 rounded bg-orange-900/30 text-orange-400 hover:bg-orange-900/60 transition-colors disabled:opacity-50"
+                        title="Generar una contraseña nueva para este usuario"
+                      >
+                        {resettingId === p.id ? 'Reseteando...' : 'Resetear contraseña'}
                       </button>
                     </td>
                   </tr>
