@@ -22,6 +22,7 @@ const Administration: React.FC = () => {
   const [role, setRole] = useState('colaborador');
   const [submitting, setSubmitting] = useState(false);
   const [createdInfo, setCreatedInfo] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const loadProfiles = () => {
     setLoading(true);
@@ -46,6 +47,7 @@ const Administration: React.FC = () => {
     try {
       await createUser(email.trim(), password, role, name.trim() || undefined);
       setCreatedInfo({ email: email.trim(), password });
+      setCopied(false);
       setEmail('');
       setName('');
       setPassword(generatePassword());
@@ -166,6 +168,28 @@ const Administration: React.FC = () => {
             <p>
               Contraseña: <span className="font-mono text-white">{createdInfo.password}</span>
             </p>
+            <p className="text-xs text-emerald-400/80 mt-2 italic">
+              Esta contraseña no se guarda en ningún lado ni se puede volver a ver: copiala ahora.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(`Email: ${createdInfo.email}\nContraseña: ${createdInfo.password}`);
+                  setCopied(true);
+                }}
+                className="text-xs font-bold px-3 py-1.5 rounded bg-emerald-700/50 hover:bg-emerald-700 text-white transition-colors"
+              >
+                {copied ? '✓ Copiado' : 'Copiar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreatedInfo(null)}
+                className="text-xs font-medium px-3 py-1.5 rounded bg-gray-700/50 hover:bg-gray-700 text-gray-300 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         )}
       </Card>

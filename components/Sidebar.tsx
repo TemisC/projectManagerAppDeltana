@@ -129,49 +129,51 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
       </nav>
 
       {/* Backup Controls */}
-      <div className="p-4 border-t border-gray-700 hidden md:block bg-gray-900/50">
-          <p className="text-[10px] text-sky-400 uppercase font-bold mb-3 tracking-wider">Sincronización (OneDrive)</p>
-          
-          <div className="flex flex-col gap-3">
-            <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center justify-center w-full px-3 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-500 rounded transition-all shadow-lg hover:scale-105 active:scale-95"
-                title="Buscar archivo en OneDrive/PC"
-            >
-                <UploadIcon className="h-4 w-4 mr-2" />
-                ABRIR DATOS
-            </button>
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept=".json" 
-                onChange={handleFileChange}
-            />
+      {!canViewExecutiveDashboard && (
+        <div className="p-4 border-t border-gray-700 hidden md:block bg-gray-900/50">
+            <p className="text-[10px] text-sky-400 uppercase font-bold mb-3 tracking-wider">Sincronización (OneDrive)</p>
 
-            <button 
-                onClick={onExportData}
-                className="flex items-center justify-center w-full px-3 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded transition-all shadow-lg hover:scale-105 active:scale-95"
-                title="Descargar archivo para guardar en OneDrive"
-            >
-                <DownloadIcon className="h-4 w-4 mr-2" />
-                GUARDAR DATOS
-            </button>
-          </div>
-          
-          {lastDataUpdate && (
-             <div className="mt-3 text-center">
-                <p className="text-[9px] text-gray-500 uppercase tracking-widest">Datos del:</p>
-                <p className="text-[10px] text-sky-300 font-mono">{lastDataUpdate}</p>
-             </div>
-          )}
-          
-          {!lastDataUpdate && (
-            <p className="text-[10px] text-gray-500 mt-3 text-center leading-tight">
-                No has cargado copia de seguridad.
-            </p>
-          )}
-      </div>
+            <div className="flex flex-col gap-3">
+              <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center justify-center w-full px-3 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-500 rounded transition-all shadow-lg hover:scale-105 active:scale-95"
+                  title="Buscar archivo en OneDrive/PC"
+              >
+                  <UploadIcon className="h-4 w-4 mr-2" />
+                  ABRIR DATOS
+              </button>
+              <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".json"
+                  onChange={handleFileChange}
+              />
+
+              <button
+                  onClick={onExportData}
+                  className="flex items-center justify-center w-full px-3 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded transition-all shadow-lg hover:scale-105 active:scale-95"
+                  title="Descargar archivo para guardar en OneDrive"
+              >
+                  <DownloadIcon className="h-4 w-4 mr-2" />
+                  GUARDAR DATOS
+              </button>
+            </div>
+
+            {lastDataUpdate && (
+               <div className="mt-3 text-center">
+                  <p className="text-[9px] text-gray-500 uppercase tracking-widest">Datos del:</p>
+                  <p className="text-[10px] text-sky-300 font-mono">{lastDataUpdate}</p>
+               </div>
+            )}
+
+            {!lastDataUpdate && (
+              <p className="text-[10px] text-gray-500 mt-3 text-center leading-tight">
+                  No has cargado copia de seguridad.
+              </p>
+            )}
+        </div>
+      )}
     </aside>
   );
 };
