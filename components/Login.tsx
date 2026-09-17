@@ -32,7 +32,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div id="login-screen-root" className="min-h-screen flex">
+      {/* Login is a fixed brand experience, independent of the in-app
+          light/dark theme preference — theme-light.css's global
+          [data-theme="light"] overrides would otherwise repaint this
+          screen's white text as near-black and make it unreadable. */}
+      <style>{`
+        #login-screen-root .text-white { color: #ffffff !important; }
+        #login-screen-root .text-gray-200 { color: #e5e7eb !important; }
+      `}</style>
       {/* Branding panel — construction imagery, Deltana-style hero */}
       <div
         className="hidden md:flex md:w-1/2 relative flex-col justify-end p-12 text-white"
