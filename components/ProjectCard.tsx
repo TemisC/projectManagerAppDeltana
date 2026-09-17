@@ -3,11 +3,12 @@ import React from 'react';
 import type { Project } from '../types';
 import { ProjectStatus } from '../types';
 import Card from './ui/Card';
-import { MailIcon } from './ui/Icons';
+import { MailIcon, EyeIcon } from './ui/Icons';
 
 interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
+  onView?: (project: Project) => void;
   readOnly?: boolean;
 }
 
@@ -31,7 +32,7 @@ const statusBadgeStyles = {
 };
 
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, readOnly }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onView, readOnly }) => {
   return (
     <Card className={`border-l-4 ${statusStyles[project.status]}`}>
       <div className="flex justify-between items-start">
@@ -48,8 +49,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, readOnly }) 
           <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusBadgeStyles[project.status]}`}>
             {project.status}
           </span>
-          {!readOnly && (
-            <button onClick={() => onEdit(project)} className="text-gray-400 hover:text-white transition-colors">
+          {readOnly ? (
+            onView && (
+              <button onClick={() => onView(project)} className="text-gray-400 hover:text-white transition-colors" title="Ver detalle">
+                <EyeIcon className="w-5 h-5" />
+              </button>
+            )
+          ) : (
+            <button onClick={() => onEdit(project)} className="text-gray-400 hover:text-white transition-colors" title="Editar">
               <EditIcon className="w-5 h-5" />
             </button>
           )}

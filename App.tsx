@@ -17,6 +17,7 @@ import { SunIcon, MoonIcon } from './components/ui/Icons';
 import type { View, Project, CollaboratorInfo, TeamMember, ClientInfo, InternalCostInfo } from './types';
 import { MemberType } from './types';
 import ProjectModal from './components/ProjectModal';
+import ProjectDetailModal from './components/ProjectDetailModal';
 import AddCollaboratorModal from './components/AddCollaboratorModal';
 import ClientFinancialsModal from './components/ClientFinancialsModal';
 import { supabase } from './lib/supabaseClient';
@@ -178,6 +179,7 @@ const App: React.FC = () => {
   // Project Modal State
   const [isProjectModalOpen, setProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [viewingProject, setViewingProject] = useState<Project | null>(null);
 
   // Collaborator Modal State
   const [isAddCollaboratorModalOpen, setAddCollaboratorModalOpen] = useState(false);
@@ -306,6 +308,10 @@ const App: React.FC = () => {
   const handleCloseProjectModal = () => {
     setProjectModalOpen(false);
     setEditingProject(null);
+  };
+
+  const handleOpenViewProjectModal = (project: Project) => {
+    setViewingProject(project);
   };
 
   const handleSaveProject = (projectData: Omit<Project, 'id'>) => {
@@ -495,6 +501,8 @@ const App: React.FC = () => {
                   internalRates={internalRates}
                   onAddProject={handleOpenAddProjectModal}
                   onEditProject={handleOpenEditProjectModal}
+                  onViewProject={handleOpenViewProjectModal}
+                  projectManagers={projectManagers}
                   readOnly={currentUserRole === 'direccion' || currentUserRole === 'administracion'}
                />;
       case 'planning':
@@ -659,6 +667,15 @@ const App: React.FC = () => {
           onClose={handleCloseProjectModal}
           onSave={handleSaveProject}
           onDelete={handleDeleteProject}
+        />
+      )}
+
+      {viewingProject && (
+        <ProjectDetailModal
+          project={viewingProject}
+          internalRates={internalRates}
+          managerName={projectManagers[viewingProject.id]?.name}
+          onClose={() => setViewingProject(null)}
         />
       )}
 

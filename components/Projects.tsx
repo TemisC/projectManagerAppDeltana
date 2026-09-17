@@ -11,6 +11,8 @@ interface ProjectsProps {
   internalRates: Record<string, number>;
   onAddProject: () => void;
   onEditProject: (project: Project) => void;
+  onViewProject?: (project: Project) => void;
+  projectManagers?: Record<string, { id: string; name: string }>;
   readOnly?: boolean;
 }
 
@@ -63,8 +65,9 @@ const calculateTotalHours = (ranges: InternalWorkRange[]): number => {
 const formatEuro = (amount: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
 
-const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProject, onEditProject, readOnly }) => {
+const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProject, onEditProject, onViewProject, projectManagers, readOnly }) => {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectStatus.InProgress);
+  const [managerFilter, setManagerFilter] = useState<string>('all');
 
   const TABS: { id: ProjectTab; label: string }[] = [
     { id: ProjectStatus.InProgress, label: 'En Proceso' },
@@ -72,7 +75,19 @@ const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProje
     { id: ProjectStatus.Proposal, label: 'Propuestas' },
   ];
 
-  const filteredProjects = projects.filter(p => p.status === activeTab);
+  const managerOptions = useMemo(() => {
+    if (!projectManagers) return [];
+    const seen = new Map<string, string>();
+    projects.forEach(p => {
+      const m = projectManagers[p.id];
+      if (m && !seen.has(m.id)) seen.set(m.id, m.name);
+    });
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [projects, projectManagers]);
+
+  const filteredProjects = projects
+    .filter(p => p.status === activeTab)
+    .filter(p => managerFilter === 'all' || projectManagers?.[p.id]?.id === managerFilter);
 
   const getTabClass = (tabId: ProjectTab) => {
     return activeTab === tabId
@@ -171,6 +186,19 @@ const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProje
               </button>
             ))}
           </div>
+          {managerOptions.length > 0 && (
+            <select
+              value={managerFilter}
+              onChange={(e) => setManagerFilter(e.target.value)}
+              className="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              title="Filtrar por gestor"
+            >
+              <option value="all">Todos los gestores</option>
+              {managerOptions.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          )}
           {!readOnly && (
             <button
               onClick={onAddProject}
@@ -267,7 +295,7 @@ const Projects: React.FC<ProjectsProps> = ({ projects, internalRates, onAddProje
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredProjects.length > 0 ? (
           filteredProjects.map(project => (
-            <ProjectCard key={project.id} project={project} onEdit={onEditProject} readOnly={readOnly} />
+            <ProjectCard key={project.id} project={project} onEdit={onEditProject} onView={onViewProject} readOnly={readOnly} />
           ))
         ) : (
           <p className="text-gray-400 col-span-full text-center py-10">No hay proyectos en esta categoría.</p>
