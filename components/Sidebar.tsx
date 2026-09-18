@@ -60,12 +60,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
         </div>
       </div>
       <nav className="flex-1 mt-6 overflow-y-auto">
-        <NavItem
-          icon={<DashboardIcon className={iconClass} />}
-          label="Dashboard"
-          isActive={currentView === 'dashboard'}
-          onClick={() => setCurrentView('dashboard')}
-        />
+        {!canViewExecutiveDashboard && (
+          <NavItem
+            icon={<DashboardIcon className={iconClass} />}
+            label="Dashboard"
+            isActive={currentView === 'dashboard'}
+            onClick={() => setCurrentView('dashboard')}
+          />
+        )}
         {canViewExecutiveDashboard && (
           <NavItem
             icon={<TrendingUpIcon className={iconClass} />}

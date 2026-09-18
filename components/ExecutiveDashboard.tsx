@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { Project } from '../types';
+import { ProjectStatus } from '../types';
 import Card from './ui/Card';
 import { TrendingUpIcon, DownloadIcon, TrophyIcon, MoneyIcon } from './ui/Icons';
 import { computePortfolioFinancials } from '../lib/economics';
+import { exportMonthlySummary } from '../lib/monthlyExport';
 
 interface ExecutiveDashboardProps {
   projects: Project[];
@@ -33,7 +35,21 @@ const BUCKET_COLOR: Record<HealthBucket, string> = {
 };
 
 const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, internalRates, projectManagers }) => {
+  const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
   const financials = useMemo(() => computePortfolioFinancials(projects, internalRates), [projects, internalRates]);
+
+  const topContracts = useMemo(() => {
+    return projects
+      .filter((p) => p.status !== ProjectStatus.Proposal && p.clientInfo)
+      .map((p) => {
+        const agreement = p.clientInfo?.agreement.amount || 0;
+        const extras = p.clientInfo?.additionals.reduce((sum, a) => sum + (a.amount || 0), 0) || 0;
+        return { ...p, totalBudget: agreement + extras };
+      })
+      .filter((p) => p.totalBudget > 0)
+      .sort((a, b) => b.totalBudget - a.totalBudget)
+      .slice(0, 5);
+  }, [projects]);
 
   const kpis = useMemo(() => {
     const totalCartera = financials.reduce((acc, f) => acc + f.totalBudget, 0);
@@ -137,13 +153,35 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
             Vista consolidada de toda la cartera de proyectos — presupuesto, facturación, margen real y previsión de cobros.
           </p>
         </div>
-        <button
-          onClick={handleDownloadPdf}
-          className="print:hidden flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-sm transition-all shadow-lg"
-        >
-          <DownloadIcon className="h-4 w-4" />
-          Descargar PDF
-        </button>
+        <div className="print:hidden flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <div className="flex flex-col">
+              <label className="text-[10px] text-gray-500 font-semibold uppercase ml-1">Exportar Mes</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="month"
+                  value={exportMonth}
+                  onChange={(e) => setExportMonth(e.target.value)}
+                  className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-white focus:ring-2 focus:ring-sky-500"
+                />
+                <button
+                  onClick={() => exportMonthlySummary(projects, internalRates, exportMonth)}
+                  className="bg-green-600 hover:bg-green-500 text-white p-1.5 rounded transition-colors"
+                  title="Descargar Resumen Mensual (Facturas Clientes y Colaboradores)"
+                >
+                  <DownloadIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={handleDownloadPdf}
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-sm transition-all shadow-lg"
+          >
+            <DownloadIcon className="h-4 w-4" />
+            Descargar PDF
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
@@ -185,6 +223,55 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
               <p className="text-xs mt-1 opacity-70 font-mono">{formatEuro(healthBuckets[bucket].budget)}</p>
             </div>
           ))}
+        </div>
+      </Card>
+
+      {/* Top 5 Contracts */}
+      <Card className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <MoneyIcon className="text-yellow-500 w-5 h-5" />
+            Top 5 Contratos (Importe)
+          </h2>
+          <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">Últimos meses</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-400">
+            <thead className="text-xs text-gray-500 uppercase bg-gray-700/50">
+              <tr>
+                <th className="px-4 py-3 rounded-l-lg">Código</th>
+                <th className="px-4 py-3">Proyecto</th>
+                <th className="px-4 py-3">Cliente</th>
+                <th className="px-4 py-3">Inicio</th>
+                <th className="px-4 py-3 text-right rounded-r-lg">Importe Acuerdo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topContracts.map((p, idx) => (
+                <tr key={p.id} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors">
+                  <td className="px-4 py-3 font-mono text-xs text-sky-400">{p.code}</td>
+                  <td className="px-4 py-3 font-medium text-white">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${idx === 0 ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-400'}`}>
+                        {idx + 1}
+                      </span>
+                      <div className="truncate max-w-[180px]" title={p.name}>{p.name}</div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">{p.client}</td>
+                  <td className="px-4 py-3 text-xs font-mono">{p.startDate || '-'}</td>
+                  <td className="px-4 py-3 text-right font-bold text-sky-400">{formatEuro(p.totalBudget)}</td>
+                </tr>
+              ))}
+              {topContracts.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                    No hay datos económicos suficientes para mostrar el ranking.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </Card>
 
