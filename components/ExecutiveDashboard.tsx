@@ -36,10 +36,26 @@ const BUCKET_COLOR: Record<HealthBucket, string> = {
 
 const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, internalRates, projectManagers }) => {
   const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
-  const financials = useMemo(() => computePortfolioFinancials(projects, internalRates), [projects, internalRates]);
+  const [managerFilter, setManagerFilter] = useState<string>('all');
+
+  const managerOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    projects.forEach((p) => {
+      const m = projectManagers[p.id];
+      if (m && !seen.has(m.id)) seen.set(m.id, m.name);
+    });
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [projects, projectManagers]);
+
+  const filteredProjects = useMemo(() => {
+    if (managerFilter === 'all') return projects;
+    return projects.filter((p) => projectManagers[p.id]?.id === managerFilter);
+  }, [projects, projectManagers, managerFilter]);
+
+  const financials = useMemo(() => computePortfolioFinancials(filteredProjects, internalRates), [filteredProjects, internalRates]);
 
   const topContracts = useMemo(() => {
-    return projects
+    return filteredProjects
       .filter((p) => p.status !== ProjectStatus.Proposal && p.clientInfo)
       .map((p) => {
         const agreement = p.clientInfo?.agreement.amount || 0;
@@ -49,7 +65,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
       .filter((p) => p.totalBudget > 0)
       .sort((a, b) => b.totalBudget - a.totalBudget)
       .slice(0, 5);
-  }, [projects]);
+  }, [filteredProjects]);
 
   const kpis = useMemo(() => {
     const totalCartera = financials.reduce((acc, f) => acc + f.totalBudget, 0);
@@ -123,7 +139,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
     }
     const monthIndex = new Map(months.map((m, i) => [m.key, i]));
 
-    projects.forEach((p) => {
+    filteredProjects.forEach((p) => {
       (p.clientInfo?.plannedInvoices || []).forEach((pi) => {
         if (!pi.date) return;
         const key = pi.date.slice(0, 7);
@@ -135,7 +151,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
     });
 
     return months;
-  }, [projects]);
+  }, [filteredProjects]);
 
   const handleDownloadPdf = () => {
     window.print();
@@ -154,6 +170,21 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
           </p>
         </div>
         <div className="print:hidden flex items-center gap-3">
+          {managerOptions.length > 0 && (
+            <div className="flex flex-col">
+              <label className="text-[10px] text-gray-500 font-semibold uppercase ml-1">Filtrar por Gestor</label>
+              <select
+                value={managerFilter}
+                onChange={(e) => setManagerFilter(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              >
+                <option value="all">Total (todos los gestores)</option>
+                {managerOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex items-center gap-2 bg-gray-800 p-2 rounded-lg border border-gray-700">
             <div className="flex flex-col">
               <label className="text-[10px] text-gray-500 font-semibold uppercase ml-1">Exportar Mes</label>
