@@ -13,6 +13,7 @@ interface CollaboratorsProps {
   onRemoveFromProject: (projectId: string, memberContact: string) => boolean;
   onAddCollaborator: () => void;
   onUpdateCollaboratorName: (contact: string, newName: string) => void;
+  projectManagers?: Record<string, { id: string; name: string }>;
   readOnly?: boolean;
 }
 
@@ -321,16 +322,32 @@ const ProjectCollaboratorCard: React.FC<{ project: Project; collaborator: TeamMe
     );
 }
 
-const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborators, onSaveFinancials, onRemoveFromProject, onAddCollaborator, onUpdateCollaboratorName, readOnly }) => {
+const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborators, onSaveFinancials, onRemoveFromProject, onAddCollaborator, onUpdateCollaboratorName, projectManagers, readOnly }) => {
   const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
   const [financialsModalData, setFinancialsModalData] = useState<{ project: Project; collaborator: TeamMember } | null>(null);
   const [detailModalData, setDetailModalData] = useState<DetailModalData | null>(null);
+  const [managerFilter, setManagerFilter] = useState<string>('all');
+
+  const managerOptions = useMemo(() => {
+    if (!projectManagers) return [];
+    const seen = new Map<string, string>();
+    projects.forEach(p => {
+      const m = projectManagers[p.id];
+      if (m && !seen.has(m.id)) seen.set(m.id, m.name);
+    });
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [projects, projectManagers]);
+
+  const filteredProjects = useMemo(() => {
+    if (managerFilter === 'all') return projects;
+    return projects.filter(p => projectManagers?.[p.id]?.id === managerFilter);
+  }, [projects, projectManagers, managerFilter]);
 
   const collaborators = useMemo(() => {
     const collaboratorMap = new Map<string, { member: TeamMember, projects: Project[] }>();
-    projects.forEach(project => {
+    filteredProjects.forEach(project => {
       project.team.forEach(member => {
         if (member.type === MemberType.External) {
           if (!collaboratorMap.has(member.contact)) {
@@ -341,17 +358,21 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborato
       });
     });
 
-    loneCollaborators.forEach(member => {
-        if (!collaboratorMap.has(member.contact)) {
-            collaboratorMap.set(member.contact, { member, projects: [] });
-        }
-    });
+    if (managerFilter === 'all') {
+      loneCollaborators.forEach(member => {
+          if (!collaboratorMap.has(member.contact)) {
+              collaboratorMap.set(member.contact, { member, projects: [] });
+          }
+      });
+    }
 
     return Array.from(collaboratorMap.values()).sort((a,b) => a.member.name.localeCompare(b.member.name));
-  }, [projects, loneCollaborators]);
-  
-  if (collaborators.length > 0 && !selectedCollaborator) {
+  }, [filteredProjects, loneCollaborators, managerFilter]);
+
+  if (collaborators.length > 0 && (!selectedCollaborator || !collaborators.some(c => c.member.contact === selectedCollaborator))) {
       setSelectedCollaborator(collaborators[0].member.contact);
+  } else if (collaborators.length === 0 && selectedCollaborator) {
+      setSelectedCollaborator(null);
   }
   
   const selectedData = collaborators.find(c => c.member.contact === selectedCollaborator);
@@ -401,15 +422,30 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ projects, loneCollaborato
       <div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Gestión de Colaboradores</h1>
-          {!readOnly && (
-            <button
-                onClick={onAddCollaborator}
-                className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-900/30"
+          <div className="flex items-center gap-3">
+            {managerOptions.length > 0 && (
+              <select
+                value={managerFilter}
+                onChange={(e) => setManagerFilter(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                title="Filtrar por gestor"
               >
-                <PlusIcon className="w-5 h-5"/>
-                Añadir Colaborador
-            </button>
-          )}
+                <option value="all">Todos los gestores</option>
+                {managerOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            )}
+            {!readOnly && (
+              <button
+                  onClick={onAddCollaborator}
+                  className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-900/30"
+                >
+                  <PlusIcon className="w-5 h-5"/>
+                  Añadir Colaborador
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

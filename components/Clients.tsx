@@ -8,6 +8,7 @@ interface ClientsProps {
   projects: Project[];
   onAddClient: () => void;
   onEditFinancials: (project: Project) => void;
+  projectManagers?: Record<string, { id: string; name: string }>;
   readOnly?: boolean;
 }
 
@@ -330,12 +331,24 @@ const ProjectFinancialsCard: React.FC<{project: Project; onEdit: () => void; rea
     )
 }
 
-const Clients: React.FC<ClientsProps> = ({ projects, onAddClient, onEditFinancials, readOnly }) => {
+const Clients: React.FC<ClientsProps> = ({ projects, onAddClient, onEditFinancials, projectManagers, readOnly }) => {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [managerFilter, setManagerFilter] = useState<string>('all');
+
+  const managerOptions = useMemo(() => {
+    if (!projectManagers) return [];
+    const seen = new Map<string, string>();
+    projects.forEach(p => {
+      const m = projectManagers[p.id];
+      if (m && !seen.has(m.id)) seen.set(m.id, m.name);
+    });
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [projects, projectManagers]);
 
   const clients = useMemo(() => {
     const clientMap = projects
       .filter(project => project.status !== ProjectStatus.Proposal)
+      .filter(project => managerFilter === 'all' || projectManagers?.[project.id]?.id === managerFilter)
       .reduce((acc, project) => {
         if (!acc[project.client]) {
           acc[project.client] = [];
@@ -344,10 +357,10 @@ const Clients: React.FC<ClientsProps> = ({ projects, onAddClient, onEditFinancia
         return acc;
       }, {} as Record<string, Project[]>);
     return Object.entries(clientMap).sort((a,b) => a[0].localeCompare(b[0]));
-  }, [projects]);
+  }, [projects, projectManagers, managerFilter]);
 
   useEffect(() => {
-    if (clients.length > 0 && selectedClient === null) {
+    if (clients.length > 0 && (selectedClient === null || !clients.some(([name]) => name === selectedClient))) {
         setSelectedClient(clients[0][0]);
     }
   }, [clients, selectedClient]);
@@ -356,15 +369,30 @@ const Clients: React.FC<ClientsProps> = ({ projects, onAddClient, onEditFinancia
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">Gestión de Clientes</h1>
-        {!readOnly && (
-          <button
-              onClick={onAddClient}
-              className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-900/30"
+        <div className="flex items-center gap-3">
+          {managerOptions.length > 0 && (
+            <select
+              value={managerFilter}
+              onChange={(e) => setManagerFilter(e.target.value)}
+              className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              title="Filtrar por gestor"
             >
-              <PlusIcon className="w-5 h-5"/>
-              Añadir Cliente (Nuevo Proyecto)
-          </button>
-        )}
+              <option value="all">Todos los gestores</option>
+              {managerOptions.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          )}
+          {!readOnly && (
+            <button
+                onClick={onAddClient}
+                className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-900/30"
+              >
+                <PlusIcon className="w-5 h-5"/>
+                Añadir Cliente (Nuevo Proyecto)
+            </button>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <aside className="md:col-span-1">

@@ -533,6 +533,7 @@ const App: React.FC = () => {
                   projects={projects}
                   onAddClient={handleOpenAddProjectModal}
                   onEditFinancials={(project) => setEditingClientProject(project)}
+                  projectManagers={projectManagers}
                   readOnly={currentUserRole === 'direccion' || currentUserRole === 'administracion'}
                 />;
       case 'collaborators':
@@ -543,10 +544,11 @@ const App: React.FC = () => {
                   onRemoveFromProject={handleRemoveCollaboratorFromProject}
                   onAddCollaborator={handleOpenAddCollaboratorModal}
                   onUpdateCollaboratorName={handleUpdateCollaboratorName}
+                  projectManagers={projectManagers}
                   readOnly={currentUserRole === 'direccion' || currentUserRole === 'administracion'}
                 />;
       case 'economic-tracking':
-        return <EconomicTracking projects={projects} globalRates={internalRates} />;
+        return <EconomicTracking projects={projects} globalRates={internalRates} projectManagers={projectManagers} />;
       case 'executive-dashboard':
         if (currentUserRole !== 'direccion' && currentUserRole !== 'administracion') {
           return <Dashboard projects={projects} internalRates={internalRates} />;

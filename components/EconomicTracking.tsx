@@ -6,6 +6,7 @@ import { EyeIcon } from './ui/Icons';
 interface EconomicTrackingProps {
   projects: Project[];
   globalRates: Record<string, number>;
+  projectManagers?: Record<string, { id: string; name: string }>;
 }
 
 const formatEuro = (amount: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(amount);
@@ -82,15 +83,27 @@ const BreakdownModal: React.FC<{
     </div>
 );
 
-const EconomicTracking: React.FC<EconomicTrackingProps> = ({ projects, globalRates }) => {
-    const [modalData, setModalData] = useState<{ 
-        type: 'budget' | 'internal-projected' | 'internal-actual' | 'external' | 'target-projected' | 'target-actual', 
-        project: Project 
+const EconomicTracking: React.FC<EconomicTrackingProps> = ({ projects, globalRates, projectManagers }) => {
+    const [modalData, setModalData] = useState<{
+        type: 'budget' | 'internal-projected' | 'internal-actual' | 'external' | 'target-projected' | 'target-actual',
+        project: Project
     } | null>(null);
+    const [managerFilter, setManagerFilter] = useState<string>('all');
+
+    const managerOptions = useMemo(() => {
+        if (!projectManagers) return [];
+        const seen = new Map<string, string>();
+        projects.forEach(p => {
+            const m = projectManagers[p.id];
+            if (m && !seen.has(m.id)) seen.set(m.id, m.name);
+        });
+        return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+    }, [projects, projectManagers]);
 
     const projectData = useMemo(() => {
         return projects
             .filter(project => project.status !== ProjectStatus.Proposal)
+            .filter(project => managerFilter === 'all' || projectManagers?.[project.id]?.id === managerFilter)
             .map(project => {
             // 1. Total Budget
             const baseBudget = project.clientInfo?.agreement.amount || 0;
@@ -167,7 +180,7 @@ const EconomicTracking: React.FC<EconomicTrackingProps> = ({ projects, globalRat
                 hasActualTracking: Boolean(project.actualTimeTracking)
             };
         });
-    }, [projects, globalRates]);
+    }, [projects, globalRates, projectManagers, managerFilter]);
 
     const renderBudgetBreakdown = (data: any) => (
         <div className="space-y-4">
@@ -386,13 +399,28 @@ const EconomicTracking: React.FC<EconomicTrackingProps> = ({ projects, globalRat
 
     return (
         <div className="animate-fade-in">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                    Seguimiento Económico y Rentabilidad
-                </h1>
-                <p className="text-gray-400 mt-2 max-w-3xl text-sm">
-                    Análisis comparativo de rentabilidad. Evalúa el <strong>Gasto Interno Proyectado</strong> frente al <strong>Gasto Interno Real (de fichajes)</strong>, y el impacto sobre el beneficio del proyecto.
-                </p>
+            <div className="mb-8 flex justify-between items-start gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                        Seguimiento Económico y Rentabilidad
+                    </h1>
+                    <p className="text-gray-400 mt-2 max-w-3xl text-sm">
+                        Análisis comparativo de rentabilidad. Evalúa el <strong>Gasto Interno Proyectado</strong> frente al <strong>Gasto Interno Real (de fichajes)</strong>, y el impacto sobre el beneficio del proyecto.
+                    </p>
+                </div>
+                {managerOptions.length > 0 && (
+                    <select
+                        value={managerFilter}
+                        onChange={(e) => setManagerFilter(e.target.value)}
+                        className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 flex-shrink-0"
+                        title="Filtrar por gestor"
+                    >
+                        <option value="all">Todos los gestores</option>
+                        {managerOptions.map(([id, name]) => (
+                            <option key={id} value={id}>{name}</option>
+                        ))}
+                    </select>
+                )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-gray-700 shadow-xl bg-gray-800/60">
