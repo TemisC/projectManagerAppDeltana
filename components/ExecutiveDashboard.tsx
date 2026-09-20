@@ -356,7 +356,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
         <Card>
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <MoneyIcon className="h-5 w-5 text-sky-400" />
-            Previsión de Cobros (6 meses)
+            Previsión de Facturación (6 meses)
           </h2>
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
