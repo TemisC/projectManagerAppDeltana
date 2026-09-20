@@ -90,12 +90,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onExport
             onClick={() => setCurrentView('planning')}
           />
         )}
-        <NavItem
-          icon={<BriefcaseIcon className={iconClass} />}
-          label="Coste Interno"
-          isActive={currentView === 'internal-team'}
-          onClick={() => setCurrentView('internal-team')}
-        />
+        {!canViewExecutiveDashboard && (
+          <NavItem
+            icon={<BriefcaseIcon className={iconClass} />}
+            label="Coste Interno"
+            isActive={currentView === 'internal-team'}
+            onClick={() => setCurrentView('internal-team')}
+          />
+        )}
         <NavItem
           icon={<TeamIcon className={iconClass} />}
           label="Equipo Global"
