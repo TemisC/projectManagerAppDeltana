@@ -16,7 +16,8 @@ interface ExecutiveDashboardProps {
 const formatEuro = (amount: number) =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(amount);
 
-const RISK_THRESHOLD = 30; // margin % below this (and >= 0) is "atención"
+const HEALTHY_THRESHOLD = 50; // margin % at or above this is "sano"
+const CRITICAL_THRESHOLD = 35; // margin % below this is "crítico"
 
 type HealthBucket = 'sano' | 'atencion' | 'critico' | 'sinPresupuesto';
 
@@ -72,7 +73,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
     const totalFacturado = financials.reduce((acc, f) => acc + f.totalInvoiced, 0);
     const totalActualProfit = financials.reduce((acc, f) => acc + f.actualProfit, 0);
     const margenCartera = totalCartera > 0 ? (totalActualProfit / totalCartera) * 100 : 0;
-    const enRiesgo = financials.filter((f) => f.totalBudget > 0 && f.actualProfitPercentage < RISK_THRESHOLD).length;
+    const enRiesgo = financials.filter((f) => f.totalBudget > 0 && f.actualProfitPercentage < HEALTHY_THRESHOLD).length;
     return { totalCartera, totalFacturado, margenCartera, enRiesgo };
   }, [financials]);
 
@@ -86,8 +87,8 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
     financials.forEach((f) => {
       let bucket: HealthBucket;
       if (f.totalBudget === 0) bucket = 'sinPresupuesto';
-      else if (f.actualProfitPercentage < 0) bucket = 'critico';
-      else if (f.actualProfitPercentage < RISK_THRESHOLD) bucket = 'atencion';
+      else if (f.actualProfitPercentage < CRITICAL_THRESHOLD) bucket = 'critico';
+      else if (f.actualProfitPercentage < HEALTHY_THRESHOLD) bucket = 'atencion';
       else bucket = 'sano';
       buckets[bucket].count += 1;
       buckets[bucket].budget += f.totalBudget;
@@ -229,7 +230,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
             {kpis.totalCartera > 0 ? ((kpis.totalFacturado / kpis.totalCartera) * 100).toFixed(1) : '0.0'}% del presupuesto
           </p>
         </Card>
-        <Card className={`border-l-4 ${kpis.margenCartera >= RISK_THRESHOLD ? 'border-emerald-500' : 'border-amber-500'}`}>
+        <Card className={`border-l-4 ${kpis.margenCartera >= HEALTHY_THRESHOLD ? 'border-emerald-500' : 'border-amber-500'}`}>
           <p className="text-xs uppercase text-gray-400 font-bold tracking-wider">Margen Real de Cartera</p>
           <p className={`text-2xl font-bold mt-2 font-mono ${kpis.margenCartera >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {kpis.margenCartera.toFixed(1)}%
@@ -239,7 +240,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
         <Card className="border-l-4 border-red-500">
           <p className="text-xs uppercase text-gray-400 font-bold tracking-wider">Proyectos en Riesgo</p>
           <p className="text-2xl font-bold text-red-400 mt-2 font-mono">{kpis.enRiesgo}</p>
-          <p className="text-xs text-gray-500 mt-1">Margen real por debajo del {RISK_THRESHOLD}%</p>
+          <p className="text-xs text-gray-500 mt-1">Margen real por debajo del {HEALTHY_THRESHOLD}%</p>
         </Card>
       </div>
 
@@ -340,7 +341,7 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ projects, inter
                     <td className="py-2 px-2 text-right text-gray-300 font-mono">{formatEuro(m.pendiente)}</td>
                     <td
                       className={`py-2 pl-2 text-right font-mono font-bold ${
-                        m.marginPercentage >= RISK_THRESHOLD ? 'text-emerald-400' : m.marginPercentage >= 0 ? 'text-amber-400' : 'text-red-400'
+                        m.marginPercentage >= HEALTHY_THRESHOLD ? 'text-emerald-400' : m.marginPercentage >= CRITICAL_THRESHOLD ? 'text-amber-400' : 'text-red-400'
                       }`}
                     >
                       {m.marginPercentage.toFixed(1)}%
